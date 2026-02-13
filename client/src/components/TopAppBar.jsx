@@ -1,5 +1,6 @@
 import { Bell, User, Home, Search, PlusCircle } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import logoPng from '../assets/logo.png'
 
 /**
  * TopAppBar - Barra de navegación superior
@@ -15,10 +16,14 @@ export function TopAppBar() {
           {/* Logo y título */}
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-lg">M</span>
-              </div>
-              <h1 className="text-xl font-semibold text-foreground hidden sm:block">
+              <img
+                src={logoPng}
+                alt="MultiMeet Logo"
+                className="w-20 h-20"
+                width={40}
+                height={40}
+              />
+              <h1 className="font-logo text-xl md:text-2xl lg:text-3xl font-semibold text-primary">
                 MultiMeet
               </h1>
             </Link>
