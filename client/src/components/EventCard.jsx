@@ -13,7 +13,8 @@ import { Badge } from './ui/Badge'
  * @param {string} props.time - Hora del evento
  * @param {string} props.location - Ubicación del evento
  * @param {number} props.participants - Número de participantes
- * @param {string} props.category - Categoría del evento
+ * @param {string|string[]} props.category - Categoría del evento (string o array)
+ * @param {string[]} props.categories - Alias para categorías (array)
  * @param {boolean} props.isTrending - Si el evento es trending
  */
 export function EventCard({
@@ -25,8 +26,12 @@ export function EventCard({
   location,
   participants,
   category,
+  categories,
   isTrending = false,
 }) {
+  // Normalizar categorías: soporta tanto 'category' como 'categories'
+  const categoryList = categories || (Array.isArray(category) ? category : [category].filter(Boolean))
+  const displayCategory = categoryList[0] // Mostrar solo la primera categoría
   return (
     <Link to={`/event/${id}`}>
       <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-border group">
@@ -50,9 +55,11 @@ export function EventCard({
           
           {/* Badge de categoría */}
           <div className="absolute bottom-4 left-4">
-            <Badge variant="accent" className="backdrop-blur-sm bg-accent/90">
-              {category}
-            </Badge>
+            {displayCategory && (
+              <Badge variant="accent" className="backdrop-blur-sm bg-accent/90">
+                {displayCategory}
+              </Badge>
+            )}
           </div>
         </div>
 
