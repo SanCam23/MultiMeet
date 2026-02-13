@@ -12,8 +12,8 @@ export function TopAppBar() {
   return (
     <div className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="w-full mx-auto max-w-[1440px]">
-        <div className="px-6 md:px-8 lg:px-12 py-5 flex items-center justify-between">
-          {/* Logo y título */}
+        <div className="px-6 md:px-8 lg:px-12 py-5 grid grid-cols-3 items-center">
+          {/* Logo y título - Columna izquierda */}
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img
@@ -29,8 +29,8 @@ export function TopAppBar() {
             </Link>
           </div>
 
-          {/* Navegación desktop - Oculta en móvil */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* Navegación desktop - Centrada - Columna central */}
+          <nav className="hidden md:flex items-center justify-center gap-6">
             <Link
               to="/"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
@@ -64,8 +64,8 @@ export function TopAppBar() {
             </Link>
           </nav>
 
-          {/* Acciones del usuario */}
-          <div className="flex items-center gap-4">
+          {/* Acciones del usuario - Columna derecha */}
+          <div className="flex items-center justify-end gap-4">
             {/* Notificaciones */}
             <button 
               className="relative p-2 hover:bg-muted/50 rounded-full transition-colors"
