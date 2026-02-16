@@ -24,7 +24,7 @@ export function TopAppBar() {
                 height={40}
               />
               <h1 className="font-logo text-xl lg:text-2xl xl:text-3xl font-semibold text-primary md:hidden lg:block">
-                MultiMeet
+                MultiMeet.
               </h1>
             </Link>
           </div>
