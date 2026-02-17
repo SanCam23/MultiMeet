@@ -151,7 +151,7 @@ export default function Categories() {
       <TopAppBar />
 
       {/* Sección de búsqueda */}
-      <div className="bg-white border-b border-border">
+      <div className="bg-card border-b border-border">
         <div className="w-full mx-auto px-6 md:px-8 lg:px-12 py-6 max-w-[1440px]">
           <h2 className="text-2xl md:text-3xl font-bold mb-6">Descubre Eventos</h2>
 
@@ -170,7 +170,7 @@ export default function Categories() {
                 className="pl-12 h-12 rounded-xl"
               />
             </div>
-            
+
             {/* Botón de filtros avanzados */}
             <Sheet>
               <SheetTrigger asChild>
@@ -178,8 +178,8 @@ export default function Categories() {
                   <SlidersHorizontal className="w-5 h-5 text-primary" />
                 </Button>
               </SheetTrigger>
-              <SheetContent 
-                side="bottom" 
+              <SheetContent
+                side="bottom"
                 className="h-[90vh] md:h-auto md:max-h-[80vh] overflow-y-auto rounded-t-3xl px-6 pt-8 pb-24 md:pb-8 md:max-w-2xl md:mx-auto"
               >
                 <SheetHeader className="mb-6">
@@ -253,11 +253,10 @@ export default function Categories() {
                         <Badge
                           key={cat.name}
                           variant={selectedCategory === cat.name ? 'default' : 'outline'}
-                          className={`cursor-pointer px-4 py-2 rounded-full transition-all ${
-                            selectedCategory === cat.name
-                              ? 'bg-accent text-white'
-                              : 'hover:border-accent'
-                          }`}
+                          className={`cursor-pointer px-4 py-2 rounded-full transition-all ${selectedCategory === cat.name
+                            ? 'bg-accent text-white'
+                            : 'hover:border-accent'
+                            }`}
                           onClick={() =>
                             setSelectedCategory(selectedCategory === cat.name ? null : cat.name)
                           }
@@ -280,7 +279,7 @@ export default function Categories() {
       </div>
 
       {/* Filtros rápidos por categoría */}
-      <div className="bg-white border-b border-border">
+      <div className="bg-card border-b border-border">
         <div className="w-full mx-auto px-6 md:px-8 lg:px-12 py-6 max-w-[1440px]">
           <p className="text-sm font-semibold mb-4 text-muted-foreground">Explorar por Categoría</p>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
@@ -288,11 +287,10 @@ export default function Categories() {
               <Badge
                 key={cat.name}
                 variant={selectedCategory === cat.name ? 'default' : 'secondary'}
-                className={`cursor-pointer whitespace-nowrap px-4 py-2 rounded-full transition-all flex-shrink-0 ${
-                  selectedCategory === cat.name
-                    ? 'bg-primary text-white shadow-md'
-                    : 'bg-white hover:bg-muted'
-                }`}
+                className={`cursor-pointer whitespace-nowrap px-4 py-2 rounded-full transition-all flex-shrink-0 ${selectedCategory === cat.name
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-card hover:bg-muted'
+                  }`}
                 onClick={() => {
                   setSelectedCategory(selectedCategory === cat.name ? null : cat.name)
                   setShowResults(true)

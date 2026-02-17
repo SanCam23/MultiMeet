@@ -22,12 +22,12 @@ import { cn } from './utils'
 
 const SheetContext = React.createContext({
   open: false,
-  setOpen: () => {},
+  setOpen: () => { },
 })
 
 const Sheet = ({ children, open: controlledOpen, onOpenChange }) => {
   const [internalOpen, setInternalOpen] = React.useState(false)
-  
+
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setOpen = onOpenChange !== undefined ? onOpenChange : setInternalOpen
 
@@ -40,7 +40,7 @@ const Sheet = ({ children, open: controlledOpen, onOpenChange }) => {
 
 const SheetTrigger = React.forwardRef(({ asChild, children, ...props }, ref) => {
   const { setOpen } = React.useContext(SheetContext)
-  
+
   const handleClick = () => setOpen(true)
 
   if (asChild && React.isValidElement(children)) {
@@ -63,11 +63,11 @@ const SheetTrigger = React.forwardRef(({ asChild, children, ...props }, ref) => 
 
 SheetTrigger.displayName = 'SheetTrigger'
 
-const SheetContent = React.forwardRef(({ 
-  side = 'bottom', 
-  className, 
-  children, 
-  ...props 
+const SheetContent = React.forwardRef(({
+  side = 'bottom',
+  className,
+  children,
+  ...props
 }, ref) => {
   const { open, setOpen } = React.useContext(SheetContext)
 
@@ -98,12 +98,12 @@ const SheetContent = React.forwardRef(({
         className="fixed inset-0 bg-black/50 z-50 animate-fade-in"
         onClick={() => setOpen(false)}
       />
-      
+
       {/* Sheet Content */}
       <div
         ref={ref}
         className={cn(
-          'fixed z-50 bg-white shadow-xl',
+          'fixed z-50 bg-card shadow-xl',
           sideClasses[side],
           className
         )}
@@ -117,7 +117,7 @@ const SheetContent = React.forwardRef(({
         >
           <X className="w-5 h-5" />
         </button>
-        
+
         {children}
       </div>
     </>

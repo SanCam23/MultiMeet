@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin } from 'lucide-react'
+import { MapPin, Sun, Moon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/Avatar'
@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button'
 import { EventCard } from '../components/EventCard'
 import { TopAppBar } from '../components/TopAppBar'
 import { BottomNav } from '../components/BottomNav'
+import { useTheme } from '../context/ThemeContext'
 
 /**
  * Datos mock del usuario
@@ -109,13 +110,14 @@ const mockPastEvents = [
 export default function UserDashboard() {
   const [postsTab, setPostsTab] = useState('personal')
   const [timelineTab, setTimelineTab] = useState('upcoming')
+  const { theme, setTheme } = useTheme()
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <TopAppBar />
 
       {/* Encabezado del perfil */}
-      <div className="bg-white border-b border-border">
+      <div className="bg-card border-b border-border">
         <div className="w-full mx-auto px-6 md:px-8 lg:px-12 py-8 max-w-[1440px]">
           <div className="max-w-2xl mx-auto lg:mx-0">
             {/* Avatar y datos básicos */}
@@ -155,10 +157,34 @@ export default function UserDashboard() {
               </button>
             </div>
 
-            {/* Botón de editar perfil */}
-            <Button variant="outline" className="w-full md:w-auto md:px-8 h-12 rounded-xl">
-              Editar Perfil
-            </Button>
+            {/* Acciones del perfil */}
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 md:flex-initial md:px-8 h-12 rounded-xl">
+                Editar Perfil
+              </Button>
+
+              {/* Toggle de tema */}
+              <div className="flex border border-border rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`flex items-center justify-center w-12 h-12 transition-all ${theme === 'light'
+                    ? 'bg-primary text-white'
+                    : 'bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                >
+                  <Sun className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`flex items-center justify-center w-12 h-12 transition-all border-l border-border ${theme === 'dark'
+                    ? 'bg-primary text-white'
+                    : 'bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                >
+                  <Moon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -168,16 +194,16 @@ export default function UserDashboard() {
         <Tabs defaultValue="posts">
           {/* Tabs principales: Mis Posts / Timeline */}
           <div className="max-w-md mx-auto lg:max-w-lg mb-8">
-            <TabsList className="grid w-full grid-cols-2 h-12 bg-white rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-2 h-12 bg-card rounded-xl p-1">
               <TabsTrigger
                 value="posts"
-                className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all"
+                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg transition-all"
               >
                 Mis Posts
               </TabsTrigger>
               <TabsTrigger
                 value="timeline"
-                className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all"
+                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg transition-all"
               >
                 Timeline
               </TabsTrigger>
@@ -188,16 +214,16 @@ export default function UserDashboard() {
           <TabsContent value="posts" className="mt-0">
             <Tabs value={postsTab} onValueChange={setPostsTab}>
               <div className="max-w-md mx-auto lg:max-w-lg mb-6">
-                <TabsList className="grid w-full grid-cols-2 h-11 bg-white rounded-lg p-0.5">
+                <TabsList className="grid w-full grid-cols-2 h-11 bg-card rounded-lg p-0.5">
                   <TabsTrigger
                     value="personal"
-                    className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-md transition-all"
+                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md transition-all"
                   >
                     Personales
                   </TabsTrigger>
                   <TabsTrigger
                     value="joined"
-                    className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-md transition-all"
+                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md transition-all"
                   >
                     Inscritos
                   </TabsTrigger>
@@ -246,16 +272,16 @@ export default function UserDashboard() {
           <TabsContent value="timeline" className="mt-0">
             <Tabs value={timelineTab} onValueChange={setTimelineTab}>
               <div className="max-w-md mx-auto lg:max-w-lg mb-6">
-                <TabsList className="grid w-full grid-cols-2 h-11 bg-white rounded-lg p-0.5">
+                <TabsList className="grid w-full grid-cols-2 h-11 bg-card rounded-lg p-0.5">
                   <TabsTrigger
                     value="upcoming"
-                    className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-md transition-all"
+                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md transition-all"
                   >
                     Próximos
                   </TabsTrigger>
                   <TabsTrigger
                     value="past"
-                    className="data-[state=active]:bg-accent data-[state=active]:text-white rounded-md transition-all"
+                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md transition-all"
                   >
                     Pasados
                   </TabsTrigger>

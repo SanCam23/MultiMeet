@@ -34,7 +34,7 @@ export function EventCard({
   const displayCategory = categoryList[0] // Mostrar solo la primera categoría
   return (
     <Link to={`/event/${id}`}>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-border group">
+      <div className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-border group">
         {/* Imagen del evento */}
         <div className="relative h-48 overflow-hidden">
           <img
@@ -42,7 +42,7 @@ export function EventCard({
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          
+
           {/* Badge de trending */}
           {isTrending && (
             <div className="absolute top-4 right-4">
@@ -52,7 +52,7 @@ export function EventCard({
               </Badge>
             </div>
           )}
-          
+
           {/* Badge de categoría */}
           <div className="absolute bottom-4 left-4">
             {displayCategory && (
@@ -68,7 +68,7 @@ export function EventCard({
           <h3 className="font-semibold text-lg mb-4 line-clamp-2 text-foreground group-hover:text-primary transition-colors">
             {title}
           </h3>
-          
+
           <div className="space-y-3 text-sm text-muted-foreground">
             {/* Fecha y hora */}
             <div className="flex items-center gap-3">
@@ -77,13 +77,13 @@ export function EventCard({
                 {date} at {time}
               </span>
             </div>
-            
+
             {/* Ubicación */}
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-secondary flex-shrink-0" />
               <span className="line-clamp-1">{location}</span>
             </div>
-            
+
             {/* Participantes */}
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-accent flex-shrink-0" />

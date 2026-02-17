@@ -99,7 +99,7 @@ export default function ItemDetail() {
         {/* Botón de volver */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-6 left-6 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          className="absolute top-6 left-6 bg-card rounded-full p-3 shadow-lg hover:shadow-xl transition-all hover:scale-105"
           aria-label="Volver"
         >
           <ArrowLeft className="w-6 h-6 text-foreground" />
@@ -127,7 +127,7 @@ export default function ItemDetail() {
         </div>
 
         {/* Card de Información del Evento */}
-        <div className="bg-white rounded-2xl p-6 md:p-8 border border-border shadow-md space-y-6 mb-8">
+        <div className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-md space-y-6 mb-8">
           {/* Fecha y Hora */}
           <div className="flex items-start gap-4">
             <Calendar className="w-6 h-6 text-primary mt-0.5 flex-shrink-0" />
@@ -194,7 +194,7 @@ export default function ItemDetail() {
         ) : (
           <>
             {/* Sección de Calificación (evento finalizado) */}
-            <div className="bg-white rounded-2xl p-8 border border-border shadow-md mb-8 max-w-md mx-auto">
+            <div className="bg-card rounded-2xl p-8 border border-border shadow-md mb-8 max-w-md mx-auto">
               <h3 className="font-semibold text-lg mb-6">Califica este Evento</h3>
               <div className="flex flex-col items-center gap-6">
                 <StarRating value={rating} onChange={setRating} />

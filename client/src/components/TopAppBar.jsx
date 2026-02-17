@@ -11,7 +11,7 @@ export function TopAppBar() {
   const location = useLocation()
 
   return (
-    <div className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
+    <div className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="w-full mx-auto max-w-[1440px]">
         <div className="px-6 md:px-8 lg:px-12 py-5 flex items-center justify-between relative">
           {/* Logo y título */}
@@ -35,8 +35,8 @@ export function TopAppBar() {
             <Link
               to="/"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${location.pathname === '/'
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                ? 'text-primary bg-primary/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
             >
               <Home className="w-5 h-5" />
@@ -46,8 +46,8 @@ export function TopAppBar() {
             <Link
               to="/categories"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${location.pathname === '/categories'
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                ? 'text-primary bg-primary/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
             >
               <Search className="w-5 h-5" />

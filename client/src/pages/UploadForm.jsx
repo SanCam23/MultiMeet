@@ -170,7 +170,7 @@ function ExtendEventForm({ onSubmit }) {
         <Label htmlFor="parentEvent" className="mb-3 block">Extender desde Evento</Label>
         <select
           id="parentEvent"
-          className="w-full h-12 px-4 bg-white border border-input rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-full h-12 px-4 bg-card border border-input rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           required
         >
           <option value="">Selecciona un evento...</option>
@@ -221,7 +221,7 @@ function CoverImageUpload() {
   return (
     <div>
       <Label className="mb-3 block">Imagen de Portada</Label>
-      <div className="border-2 border-dashed border-border rounded-2xl h-48 flex flex-col items-center justify-center gap-3 bg-white hover:bg-muted/20 transition-colors cursor-pointer">
+      <div className="border-2 border-dashed border-border rounded-2xl h-48 flex flex-col items-center justify-center gap-3 bg-card hover:bg-muted/20 transition-colors cursor-pointer">
         <ImageIcon className="w-12 h-12 text-secondary" />
         <Button type="button" variant="outline" size="sm" className="rounded-xl">
           Subir Imagen
