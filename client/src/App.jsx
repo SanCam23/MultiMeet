@@ -15,6 +15,7 @@ function App() {
         <Route path="/categories" element={<Categories />} />
         <Route path="/event/:id" element={<ItemDetail />} />
         <Route path="/upload" element={<UploadForm />} />
+        <Route path="/create" element={<UploadForm />} />
         <Route path="/dashboard" element={<UserDashboard />} />
         <Route path="/profile" element={<UserDashboard />} />
       </Routes>
