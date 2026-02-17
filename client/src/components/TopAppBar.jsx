@@ -1,5 +1,6 @@
-import { Bell, User, Home, Search, PlusCircle } from 'lucide-react'
+import { User, Home, Search, PlusCircle } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import { NotificationsPopover } from './NotificationsPopover'
 import logoPng from '../assets/logo.png'
 
 /**
@@ -33,28 +34,26 @@ export function TopAppBar() {
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
             <Link
               to="/"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                location.pathname === '/'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${location.pathname === '/'
                   ? 'text-primary bg-primary/10'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
+                }`}
             >
               <Home className="w-5 h-5" />
               <span className="font-medium">Inicio</span>
             </Link>
-            
+
             <Link
               to="/categories"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                location.pathname === '/categories'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${location.pathname === '/categories'
                   ? 'text-primary bg-primary/10'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
+                }`}
             >
               <Search className="w-5 h-5" />
               <span className="font-medium">Explorar</span>
             </Link>
-            
+
             <Link
               to="/upload"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg"
@@ -67,17 +66,11 @@ export function TopAppBar() {
           {/* Acciones del usuario */}
           <div className="flex items-center gap-4">
             {/* Notificaciones */}
-            <button 
-              className="relative p-2 hover:bg-muted/50 rounded-full transition-colors"
-              aria-label="Notificaciones"
-            >
-              <Bell className="w-6 h-6 text-secondary" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"></span>
-            </button>
-            
+            <NotificationsPopover />
+
             {/* Perfil */}
-            <Link 
-              to="/profile" 
+            <Link
+              to="/profile"
               className="p-2 hover:bg-muted/50 rounded-full transition-colors"
               aria-label="Perfil"
             >
