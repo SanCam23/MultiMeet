@@ -205,7 +205,7 @@ export default function UserDashboard() {
                 value="timeline"
                 className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg transition-all"
               >
-                Timeline
+                Participados
               </TabsTrigger>
             </TabsList>
           </div>
