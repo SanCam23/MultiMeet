@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
-import Auth from './pages/Auth'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 import Categories from './pages/Categories'
 import ItemDetail from './pages/ItemDetail'
 import UploadForm from './pages/UploadForm'
@@ -11,7 +12,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/auth" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/event/:id" element={<ItemDetail />} />
         <Route path="/upload" element={<UploadForm />} />
@@ -24,3 +27,4 @@ function App() {
 }
 
 export default App
+
