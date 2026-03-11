@@ -12,6 +12,7 @@
 
 @layer base {
   :root {
+    --font-size: 16px;
     --background: 210 17% 98%;
     --foreground: 222.2 47.4% 11.2%;
     --card: 0 0% 100%;
@@ -31,29 +32,54 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 283 85% 38%;
+    --logo-title: 283 82% 39%;
     --radius: 1rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --card: 222 47% 11%;
-    --card-foreground: 213 31% 91%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 213 31% 91%;
+    --background: 260 50% 5%;
+    --foreground: 210 17% 98%;
+    --card: 257 33% 11%;
+    --card-foreground: 210 17% 98%;
+    --popover: 257 33% 11%;
+    --popover-foreground: 210 17% 98%;
     --primary: 283 85% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 195 40% 50%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 267 50% 45%;
+    --secondary: 195 61% 70%;
+    --secondary-foreground: 260 50% 5%;
+    --muted: 255 18% 18%;
+    --muted-foreground: 220 10% 76%;
+    --accent: 267 67% 68%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 255 18% 18%;
+    --input: 255 18% 18%;
     --ring: 283 85% 38%;
+    --logo-title: 263 86% 76%;
+  }
+
+  .high-contrast {
+    --background: 0 0% 7%;
+    --foreground: 60 100% 50%;
+    --card: 0 0% 12%;
+    --card-foreground: 60 100% 50%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 60 100% 50%;
+    --primary: 60 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 27%;
+    --secondary-foreground: 60 100% 50%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 73%;
+    --accent: 51 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 63%;
+    --destructive-foreground: 0 0% 0%;
+    --border: 0 0% 33%;
+    --input: 0 0% 20%;
+    --ring: 60 100% 50%;
+    --logo-title: 60 100% 50%;
   }
 }
 
@@ -61,32 +87,45 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  html {
+    font-size: var(--font-size);
+  }
+}
+
+.large-text {
+  --font-size: 20px;
 }
 
 @layer utilities {
   .font-logo {
     font-family: "Neue Power Ultra", system-ui, sans-serif;
   }
+
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
   }
+
   .line-clamp-2 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -97,6 +136,7 @@
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -106,6 +146,7 @@
   from {
     transform: translateY(-100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -115,6 +156,7 @@
   from {
     transform: translateX(-100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -124,6 +166,7 @@
   from {
     transform: translateX(100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -133,6 +176,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

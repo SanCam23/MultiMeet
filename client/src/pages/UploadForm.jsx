@@ -9,6 +9,7 @@ import { Input } from '../components/ui/Input'
 import { Label } from '../components/ui/Label'
 import { Textarea } from '../components/ui/Textarea'
 import { Badge } from '../components/ui/Badge'
+import { useTheme } from '../context/ThemeContext'
 
 
 const CATEGORIES = [
@@ -28,6 +29,8 @@ export default function UploadForm() {
   const navigate = useNavigate()
   const [selectedCategories, setSelectedCategories] = useState([])
   const [formType, setFormType] = useState('new')
+  const { theme } = useTheme()
+  const isHighContrast = theme === 'high-contrast'
 
 
   const toggleCategory = (category) => {
@@ -55,11 +58,17 @@ export default function UploadForm() {
         {/* Selector de tipo de formulario */}
         <Tabs value={formType} onValueChange={setFormType}>
           <div className="max-w-md mx-auto mb-8">
-            <TabsList className="grid w-full grid-cols-2 h-12">
-              <TabsTrigger value="new">
+            <TabsList className="grid w-full grid-cols-2 h-12 bg-card rounded-xl p-1">
+              <TabsTrigger
+                value="new"
+                className={`rounded-lg data-[state=active]:bg-primary ${isHighContrast ? 'data-[state=active]:text-black' : 'data-[state=active]:text-white'}`}
+              >
                 Nuevo Meetup
               </TabsTrigger>
-              <TabsTrigger value="extend">
+              <TabsTrigger
+                value="extend"
+                className={`rounded-lg data-[state=active]:bg-primary ${isHighContrast ? 'data-[state=active]:text-black' : 'data-[state=active]:text-white'}`}
+              >
                 Extender Evento
               </TabsTrigger>
             </TabsList>

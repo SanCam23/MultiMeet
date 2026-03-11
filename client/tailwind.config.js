@@ -41,6 +41,7 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        'logo-title': 'hsl(var(--logo-title))',
       },
       borderRadius: {
         lg: 'var(--radius)',
