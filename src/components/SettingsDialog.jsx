@@ -1,22 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Moon, Sun, Eye, Type, Check } from "lucide-react";
+import { X, Moon, Sun, Contrast, Type } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
-import { Button } from "@/components/ui/Button";
 
 export function SettingsDialog({ open, onOpenChange }) {
   const { theme, setTheme, largeText, setLargeText } = useTheme();
+  const isHighContrast = theme === "high-contrast";
 
-  // Bloqueo de scroll al abrir
   useEffect(() => {
     if (open) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [open]);
 
@@ -24,136 +23,179 @@ export function SettingsDialog({ open, onOpenChange }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* Fondo borroso/oscuro */}
-      <div 
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity"
+      <div
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
-
-      {/* Contenido del modal */}
-      <div 
-        role="dialog" 
+      <div
+        role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="relative w-full max-w-lg bg-card border border-border shadow-2xl p-6 sm:p-8 rounded-3xl m-4 md:m-8 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full sm:max-w-[525px] bg-card border border-border shadow-2xl rounded-3xl p-0 gap-0 max-h-[90vh] flex flex-col overflow-hidden m-4 animate-in fade-in zoom-in-95 duration-200"
       >
-        <button
-          onClick={() => onOpenChange(false)}
-          className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-          aria-label="Cerrar ajustes"
-        >
-          <X className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
-        </button>
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-border shrink-0 flex items-center justify-between">
+          <h2 id="settings-title" className="text-2xl font-bold">Ajustes</h2>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="p-2 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label="Cerrar ajustes"
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
 
-        <h2 id="settings-title" className="text-2xl font-bold mb-8">Ajustes y Accesibilidad</h2>
+        {/* Content */}
+        <div className="overflow-y-auto flex-1 overscroll-contain px-6 py-5">
+          {/* Theme Section */}
+          <div className="mb-5">
+            <h3 className="font-semibold text-lg mb-1">Apariencia</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Elige cómo se ve MultiMeet
+            </p>
 
-        <div className="space-y-8">
-          {/* Apariencia / Temas */}
-          <section>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-               <Eye className="w-5 h-5 text-primary" aria-hidden="true" />
-               Apariencia
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3">
+              {/* Light Mode */}
               <button
                 onClick={() => setTheme("light")}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
-                  theme === "light" 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-primary/50"
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+                  theme === "light"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/30"
                 }`}
-                aria-pressed={theme === "light"}
               >
-                <div className="w-10 h-10 mb-2 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 border border-slate-200 shadow-sm relative">
-                  <Sun className="w-5 h-5" />
-                  {theme === "light" && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
-                      <Check className="w-3 h-3" strokeWidth={3} />
-                    </div>
-                  )}
-                </div>
-                <span className="text-sm font-medium">Claro</span>
-              </button>
-
-              <button
-                onClick={() => setTheme("dark")}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
-                  theme === "dark" 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-primary/50"
-                }`}
-                aria-pressed={theme === "dark"}
-              >
-                <div className="w-10 h-10 mb-2 rounded-full bg-slate-900 flex items-center justify-center text-slate-100 border border-slate-800 shadow-sm relative">
-                  <Moon className="w-5 h-5" />
-                  {theme === "dark" && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
-                      <Check className="w-3 h-3" strokeWidth={3} />
-                    </div>
-                  )}
-                </div>
-                <span className="text-sm font-medium">Oscuro</span>
-              </button>
-
-              <button
-                onClick={() => setTheme("high-contrast")}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
-                  theme === "high-contrast" 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-primary/50"
-                }`}
-                aria-pressed={theme === "high-contrast"}
-              >
-                <div className="w-10 h-10 mb-2 rounded-full bg-black flex items-center justify-center text-yellow-500 border-2 border-yellow-500 shadow-sm relative">
-                  <Eye className="w-5 h-5" />
-                  {theme === "high-contrast" && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
-                      <Check className="w-3 h-3" strokeWidth={3} />
-                    </div>
-                  )}
-                </div>
-                <span className="text-sm font-medium">Alto Contraste</span>
-              </button>
-            </div>
-          </section>
-
-          {/* Tamaño de texto */}
-          <section>
-             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                 <Type className="w-5 h-5 text-primary" aria-hidden="true" />
-                 Tamaño de texto
-              </h3>
-              <div className="bg-muted/30 p-4 rounded-xl border border-border flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Texto grande</h4>
-                  <p className="text-sm text-muted-foreground mt-0.5">Aumenta el tamaño base de las fuentes</p>
-                </div>
-                
-                <button
-                  role="switch"
-                  aria-checked={largeText}
-                  onClick={() => setLargeText(!largeText)}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-card ${
-                    largeText ? 'bg-primary' : 'bg-switch-background'
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    theme === "light"
+                      ? `bg-primary ${isHighContrast ? "text-black" : "text-white"}`
+                      : `bg-muted ${isHighContrast ? "text-white" : "text-muted-foreground"}`
                   }`}
                 >
-                  <span className="sr-only">Habilitar texto grande</span>
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                      largeText ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-          </section>
+                  <Sun className="w-5 h-5" />
+                </div>
+                <span className="font-medium text-sm">Claro</span>
+                {theme === "light" && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                )}
+              </button>
 
-          <Button 
-            className="w-full h-12 rounded-xl mt-4" 
-            onClick={() => onOpenChange(false)}
-          >
-            Guardar y Cerrar
-          </Button>
+              {/* Dark Mode */}
+              <button
+                onClick={() => setTheme("dark")}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+                  theme === "dark"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/30"
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    theme === "dark"
+                      ? `bg-primary ${isHighContrast ? "text-black" : "text-white"}`
+                      : `bg-muted ${isHighContrast ? "text-white" : "text-muted-foreground"}`
+                  }`}
+                >
+                  <Moon className="w-5 h-5" />
+                </div>
+                <span className="font-medium text-sm">Oscuro</span>
+                {theme === "dark" && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                )}
+              </button>
+
+              {/* High Contrast Mode */}
+              <button
+                onClick={() => setTheme("high-contrast")}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+                  theme === "high-contrast"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/30"
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    theme === "high-contrast"
+                      ? `bg-primary ${isHighContrast ? "text-black" : "text-white"}`
+                      : `bg-muted ${isHighContrast ? "text-black" : "text-muted-foreground"}`
+                  }`}
+                >
+                  <Contrast className={`w-5 h-5 ${isHighContrast ? "text-black" : ""}`} />
+                </div>
+                <span className="font-medium text-sm text-center">Alto Contraste</span>
+                {theme === "high-contrast" && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border mb-5" />
+
+          {/* Text Size Section */}
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Tamaño de texto</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Ajusta el tamaño de texto en toda la app
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              {/* Normal */}
+              <button
+                onClick={() => setLargeText(false)}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+                  !largeText
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/30"
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    !largeText
+                      ? `bg-primary ${isHighContrast ? "text-black" : "text-white"}`
+                      : `bg-muted ${isHighContrast ? "text-white" : "text-muted-foreground"}`
+                  }`}
+                >
+                  <Type className={`w-5 h-5 ${isHighContrast && !largeText ? "text-black" : ""}`} />
+                </div>
+                <div className="text-center">
+                  <span className="font-medium text-sm block">Normal</span>
+                  <span className="text-xs text-muted-foreground">Base 16px</span>
+                </div>
+                {!largeText && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                )}
+              </button>
+
+              {/* Large */}
+              <button
+                onClick={() => setLargeText(true)}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+                  largeText
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/30"
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    largeText
+                      ? `bg-primary ${isHighContrast ? "text-black" : "text-white"}`
+                      : `bg-muted ${isHighContrast ? "text-white" : "text-muted-foreground"}`
+                  }`}
+                >
+                  <Type className={`w-6 h-6 ${isHighContrast ? (largeText ? "text-black" : "text-white") : ""}`} />
+                </div>
+                <div className="text-center">
+                  <span className="font-medium text-sm block">Grande</span>
+                  <span className="text-xs text-muted-foreground">Base 20px</span>
+                </div>
+                {largeText && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

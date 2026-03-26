@@ -153,7 +153,7 @@ export function NotificationsPopover() {
                   onClick={markAllAsRead}
                   className="text-primary hover:text-primary font-medium hover:bg-primary/10 h-8 px-3 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  Marcar todo leído
+                  Marcar todo como leído
                 </button>
               )}
             </div>

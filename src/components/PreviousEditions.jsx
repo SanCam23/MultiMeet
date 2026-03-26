@@ -1,43 +1,58 @@
-import { Calendar, Users } from "lucide-react";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Calendar } from "lucide-react";
 
 export function PreviousEditions({ editions }) {
-  if (!editions || editions.length === 0) return null;
+  const router = useRouter();
+
+  if (!editions || editions.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="mb-10" aria-label="Versiones anteriores del evento">
-      <h2 className="text-xl font-bold mb-4">Versiones Anteriores</h2>
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="font-semibold text-lg">Ediciones anteriores</h3>
+        <span className="text-sm text-muted-foreground">
+          {editions.length} {editions.length === 1 ? 'edición' : 'ediciones'}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {editions.map((edition) => (
-          <div 
-            key={edition.id} 
-            className="flex-shrink-0 w-64 md:w-72 bg-card border border-border rounded-xl overflow-hidden shadow-sm flex flex-col snap-start"
+          <button
+            key={edition.id}
+            onClick={() => router.push(`/item/${edition.id}`)}
+            className="group bg-card border border-border rounded-2xl overflow-hidden hover:border-primary transition-all hover:shadow-lg text-left"
           >
-            <div className="relative h-36">
-              <img 
-                src={edition.image} 
-                alt={`Imagen de ${edition.title}`} 
-                className="w-full h-full object-cover" 
+            <div className="relative h-40 overflow-hidden">
+              <img
+                src={edition.image}
+                alt={edition.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-foreground">
-                {edition.year}
-              </div>
-            </div>
-            <div className="p-4 flex flex-col flex-1">
-              <h3 className="font-semibold text-sm mb-2 line-clamp-2">{edition.title}</h3>
-              <div className="mt-auto space-y-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-                  <span>{edition.date}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-                  <span>{edition.participants.toLocaleString()} asistentes</span>
+              <div className="absolute top-3 left-3">
+                <div className="bg-primary text-white px-3 py-1.5 rounded-full text-sm font-semibold">
+                  {edition.year}
                 </div>
               </div>
             </div>
-          </div>
+            <div className="p-5">
+              <h4 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                {edition.title}
+              </h4>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <Calendar className="w-4 h-4" />
+                <span>{edition.date}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {edition.participants.toLocaleString()} participantes
+              </p>
+            </div>
+          </button>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Calendar, MapPin, Users, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { useTheme } from "@/context/ThemeContext";
 
 export function EventCard({
   id,
@@ -15,6 +16,9 @@ export function EventCard({
   category,
   isTrending = false,
 }) {
+  const { theme } = useTheme();
+  const isHighContrast = theme === "high-contrast";
+
   return (
     <Link href={`/item/${id}`} className="block focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
       <article className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-border">
@@ -49,7 +53,7 @@ export function EventCard({
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-secondary" aria-hidden="true" />
+              <MapPin className={`w-5 h-5 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
               <span className="line-clamp-1">{location}</span>
             </div>
             <div className="flex items-center gap-3">

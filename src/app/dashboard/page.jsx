@@ -5,6 +5,7 @@ import { Settings, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { useTheme } from "@/context/ThemeContext";
 
 const mockUserData = {
   name: "Sarah Johnson",
@@ -40,6 +41,16 @@ const mockJoinedEvents = [
     participants: 45,
     category: "Tech",
   },
+  {
+    id: "3",
+    image: "https://images.unsplash.com/photo-1644612105654-b6b0a941ecde?w=400",
+    title: "Sunrise Yoga Session",
+    date: "Feb 16, 2026",
+    time: "6:30 AM",
+    location: "Golden Gate Park",
+    participants: 28,
+    category: "Fitness",
+  },
 ];
 
 const mockPastEvents = [
@@ -59,6 +70,8 @@ export default function DashboardPage() {
   const [mainTab, setMainTab] = useState("posts");
   const [subTab, setSubTab] = useState("personal");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { theme } = useTheme();
+  const isHighContrast = theme === "high-contrast";
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -67,7 +80,7 @@ export default function DashboardPage() {
         <div className="w-full mx-auto px-6 md:px-8 lg:px-12 py-8 max-w-[1440px]">
           <div className="max-w-2xl mx-auto lg:mx-0">
             <div className="flex items-start gap-5 mb-6">
-              <div aria-hidden="true" className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden bg-primary/10 flex-shrink-0">
+              <div className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden bg-primary/10 flex-shrink-0">
                 <img src={mockUserData.avatar} alt="" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1">
@@ -76,7 +89,7 @@ export default function DashboardPage() {
                   {mockUserData.username}
                 </p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4 text-secondary" aria-hidden="true" />
+                  <MapPin className={`w-4 h-4 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
                   <span>{mockUserData.location}</span>
                 </div>
               </div>
@@ -85,14 +98,14 @@ export default function DashboardPage() {
             <p className="text-sm mb-6 leading-relaxed">{mockUserData.bio}</p>
 
             <div className="flex gap-8 mb-6">
-              <div className="text-center">
+              <button className="text-center hover:opacity-80 transition-opacity">
                 <p className="text-xl font-bold text-foreground">{mockUserData.followers}</p>
                 <p className="text-sm text-muted-foreground">Seguidores</p>
-              </div>
-              <div className="text-center">
+              </button>
+              <button className="text-center hover:opacity-80 transition-opacity">
                 <p className="text-xl font-bold text-foreground">{mockUserData.following}</p>
                 <p className="text-sm text-muted-foreground">Siguiendo</p>
-              </div>
+              </button>
             </div>
 
             <div className="flex gap-3">
@@ -112,7 +125,6 @@ export default function DashboardPage() {
 
       {/* Tabs and Content */}
       <section className="w-full mx-auto px-6 md:px-8 lg:px-12 pt-6 pb-8 max-w-[1440px]" aria-label="Contenido del usuario">
-        
         {/* Main Tablist */}
         <div className="max-w-md mx-auto mb-6 md:max-w-none md:flex md:justify-center md:gap-6" role="tablist">
           <div className="grid grid-cols-2 h-12 bg-card rounded-xl p-1 w-full md:w-64 mb-4 md:mb-0">
@@ -121,7 +133,9 @@ export default function DashboardPage() {
               aria-selected={mainTab === "posts"}
               onClick={() => { setMainTab("posts"); setSubTab("personal"); }}
               className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                mainTab === "posts" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                mainTab === "posts"
+                  ? `bg-primary ${isHighContrast ? "text-black" : "text-primary-foreground"} shadow-sm`
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Mis posts
@@ -131,14 +145,16 @@ export default function DashboardPage() {
               aria-selected={mainTab === "timeline"}
               onClick={() => { setMainTab("timeline"); setSubTab("upcoming"); }}
               className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                mainTab === "timeline" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                mainTab === "timeline"
+                  ? `bg-primary ${isHighContrast ? "text-black" : "text-primary-foreground"} shadow-sm`
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Historial
             </button>
           </div>
 
-          {/* Sub Tablist based on Main Tab */}
+          {/* Sub Tablist */}
           <div className="grid grid-cols-2 h-11 bg-card rounded-lg p-0.5 w-full md:w-56" role="tablist">
             {mainTab === "posts" ? (
               <>
@@ -147,7 +163,9 @@ export default function DashboardPage() {
                   aria-selected={subTab === "personal"}
                   onClick={() => setSubTab("personal")}
                   className={`rounded-md transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                    subTab === "personal" ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground"
+                    subTab === "personal"
+                      ? `bg-accent ${isHighContrast ? "text-black" : "text-accent-foreground"} shadow-sm`
+                      : "text-muted-foreground"
                   }`}
                 >
                   Personal
@@ -157,7 +175,9 @@ export default function DashboardPage() {
                   aria-selected={subTab === "joined"}
                   onClick={() => setSubTab("joined")}
                   className={`rounded-md transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                    subTab === "joined" ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground"
+                    subTab === "joined"
+                      ? `bg-accent ${isHighContrast ? "text-black" : "text-accent-foreground"} shadow-sm`
+                      : "text-muted-foreground"
                   }`}
                 >
                   Apuntado
@@ -170,7 +190,9 @@ export default function DashboardPage() {
                   aria-selected={subTab === "upcoming"}
                   onClick={() => setSubTab("upcoming")}
                   className={`rounded-md transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                    subTab === "upcoming" ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground"
+                    subTab === "upcoming"
+                      ? `bg-accent ${isHighContrast ? "text-black" : "text-accent-foreground"} shadow-sm`
+                      : "text-muted-foreground"
                   }`}
                 >
                   Próximos
@@ -180,7 +202,9 @@ export default function DashboardPage() {
                   aria-selected={subTab === "past"}
                   onClick={() => setSubTab("past")}
                   className={`rounded-md transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                    subTab === "past" ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground"
+                    subTab === "past"
+                      ? `bg-accent ${isHighContrast ? "text-black" : "text-accent-foreground"} shadow-sm`
+                      : "text-muted-foreground"
                   }`}
                 >
                   Pasados
@@ -190,13 +214,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Dynamic Event Grid */}
+        {/* Event Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8 mt-6">
-          {(mainTab === "posts" && subTab === "personal" ? mockPersonalEvents : 
+          {(mainTab === "posts" && subTab === "personal" ? mockPersonalEvents :
             mainTab === "posts" && subTab === "joined" ? mockJoinedEvents :
             mainTab === "timeline" && subTab === "upcoming" ? mockJoinedEvents :
             mockPastEvents).map((event) => (
-             <EventCard key={event.id} {...event} />
+           <EventCard key={event.id} {...event} />
           ))}
         </div>
       </section>

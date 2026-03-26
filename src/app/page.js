@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { EventCard } from "@/components/EventCard";
 import { mockEvents } from "@/data/events";
+import { useTheme } from "@/context/ThemeContext";
 
 const tabs = [
   { value: "following", label: "Siguiendo" },
@@ -12,6 +13,8 @@ const tabs = [
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("following");
+  const { theme } = useTheme();
+  const isHighContrast = theme === "high-contrast";
 
   return (
     <section aria-label="Eventos">
@@ -27,7 +30,7 @@ export default function HomePage() {
                 onClick={() => setActiveTab(tab.value)}
                 className={`rounded-lg text-sm md:text-base font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring ${
                   activeTab === tab.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? `bg-primary ${isHighContrast ? "text-black" : "text-primary-foreground"} shadow-sm`
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >

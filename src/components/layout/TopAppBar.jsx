@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation";
 import { User, Home, Search, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
+import { useTheme } from "@/context/ThemeContext";
 
 export function TopAppBar() {
   const pathname = usePathname();
+  const { theme } = useTheme();
+  const isHighContrast = theme === "high-contrast";
 
   return (
-    <header className="bg-background border-b border-border sticky top-0 z-50 shadow-sm">
+    <header className="bg-background border-b border-border sticky top-0 z-10 shadow-sm">
       <div className="w-full mx-auto max-w-[1440px]">
         <div className="px-6 md:px-8 lg:px-12 py-5 flex items-center gap-4">
           {/* Logo and title */}
@@ -28,7 +31,7 @@ export function TopAppBar() {
                 className="w-15 h-15 object-contain"
                 priority
               />
-              <h1 className="font-semibold font-['Poppins'] text-[26px] md:text-[28px] lg:text-[36px] text-logo-title whitespace-nowrap">
+              <h1 className="font-semibold font-['Poppins'] font-bold text-[26px] md:text-[28px] lg:text-[36px] text-logo-title whitespace-nowrap">
                 MultiMeet.
               </h1>
             </Link>
@@ -78,7 +81,7 @@ export function TopAppBar() {
               className="hidden md:block p-2 hover:bg-muted/50 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label="Perfil de usuario"
             >
-              <User className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
+              <User className={`w-6 h-6 ${isHighContrast ? "text-yellow-300" : "text-muted-foreground"}`} aria-hidden="true" />
             </Link>
           </div>
         </div>
