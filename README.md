@@ -1,70 +1,36 @@
-# MultiMeet
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-Plataforma de gestión de contenidos multimedia.
+## Getting Started
 
-## Estructura del Proyecto
+First, run the development server:
 
-Este es un monorepositorio MERN (MongoDB, Express, React, Node.js).
-
-### Frontend (/client)
-- React application
-
-### Backend (/server)
-- Node.js + Express API
-
-## Instalación
-
-### Backend
 ```bash
-cd server
-npm install
-npm start
-```
-
-### Frontend
-```bash
-cd client
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## 🎨 Sistema de Diseño
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Paleta de Colores
-- **Primary**: `#7209B7` (Púrpura) - Acciones principales
-- **Secondary**: `#7CCFEB` (Azul claro) - Acciones secundarias  
-- **Accent**: `#9263F8` (Púrpura claro) - Acentos
-- **Background**: `#F8F9FA` (Gris muy claro)
+You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
-### Componentes UI Disponibles
-- ✅ Tabs, Badge, Button, Input, Card
-- ✅ EventCard, TopAppBar, BottomNav
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## 📱 Responsive
-- **Móvil** (< 768px): 1 columna, navegación inferior
-- **Tablet** (768px - 1024px): 2 columnas
-- **Desktop** (> 1024px): 3 columnas, navegación superior
+## Learn More
 
-## 📝 Estado del Desarrollo
+To learn more about Next.js, take a look at the following resources:
 
-### ✅ Completado
-- [x] Configuración inicial del proyecto
-- [x] Sistema de diseño y componentes UI
-- [x] Página Home responsive
-- [x] Componentes reutilizables
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### 🚧 Próximamente
-- [ ] Autenticación
-- [ ] Integración con backend
-- [ ] Más páginas (Auth, Categories, etc.)
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## 📚 Documentación
+## Deploy on Vercel
 
-- [Client README](./client/README.md) - Documentación del frontend
-- [Implementation Guide](./client/IMPLEMENTATION.md) - Guía del Home
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-## Tecnologias
-
-- **Frontend**: React
-- **Backend**: Node.js, Express
-- **Base de datos**: MongoDB
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
