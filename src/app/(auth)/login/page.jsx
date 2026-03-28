@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -8,10 +9,43 @@ import { Label } from "@/components/ui/Label";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    router.push("/");
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Error al iniciar sesión");
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSocialLogin = (provider) => {
@@ -35,6 +69,11 @@ export default function LoginPage() {
           <h2 className="text-xl font-semibold mb-8">Inicia sesión para continuar</h2>
 
           <form onSubmit={handleLogin} className="space-y-6">
+            {error && (
+              <div className="p-3 bg-red-100/20 border border-red-500/50 text-red-500 rounded-xl text-sm text-center">
+                {error}
+              </div>
+            )}
             <div>
               <Label htmlFor="email" className="mb-2 block">Correo electrónico</Label>
               <Input
@@ -42,6 +81,8 @@ export default function LoginPage() {
                 type="email"
                 placeholder="tu@email.com"
                 className="h-12 rounded-xl"
+                value={formData.email}
+                onChange={handleChange}
                 required
                 aria-required="true"
               />
@@ -54,13 +95,15 @@ export default function LoginPage() {
                 type="password"
                 placeholder="••••••••"
                 className="h-12 rounded-xl"
+                value={formData.password}
+                onChange={handleChange}
                 required
                 aria-required="true"
               />
             </div>
 
-            <Button type="submit" className="w-full h-12 rounded-xl mt-8">
-              Iniciar sesión
+            <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl mt-8">
+              {loading ? "Iniciando sesión..." : "Iniciar sesión"}
             </Button>
           </form>
 

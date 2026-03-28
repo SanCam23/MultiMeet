@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -8,10 +9,44 @@ import { Label } from "@/components/ui/Label";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSignup = async (e) => {
     e.preventDefault();
-    router.push("/");
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Error al registrarse");
+      }
+
+      router.push("/login?registered=true");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSocialSignup = (provider) => {
@@ -35,6 +70,11 @@ export default function SignupPage() {
           <h2 className="text-xl font-semibold mb-8">Crea tu cuenta</h2>
 
           <form onSubmit={handleSignup} className="space-y-6">
+            {error && (
+              <div className="p-3 bg-red-100/20 border border-red-500/50 text-red-500 rounded-xl text-sm text-center">
+                {error}
+              </div>
+            )}
             <div>
               <Label htmlFor="name" className="mb-2 block">Nombre completo</Label>
               <Input
@@ -42,6 +82,8 @@ export default function SignupPage() {
                 type="text"
                 placeholder="Ej. Juan Pérez"
                 className="h-12 rounded-xl"
+                value={formData.name}
+                onChange={handleChange}
                 required
                 aria-required="true"
               />
@@ -54,6 +96,8 @@ export default function SignupPage() {
                 type="email"
                 placeholder="tu@email.com"
                 className="h-12 rounded-xl"
+                value={formData.email}
+                onChange={handleChange}
                 required
                 aria-required="true"
               />
@@ -66,13 +110,15 @@ export default function SignupPage() {
                 type="password"
                 placeholder="••••••••"
                 className="h-12 rounded-xl"
+                value={formData.password}
+                onChange={handleChange}
                 required
                 aria-required="true"
               />
             </div>
 
-            <Button type="submit" className="w-full h-12 rounded-xl mt-8">
-              Crear cuenta
+            <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl mt-8">
+              {loading ? "Creando cuenta..." : "Crear cuenta"}
             </Button>
           </form>
 
