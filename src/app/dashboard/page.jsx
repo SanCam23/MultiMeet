@@ -1,21 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Settings, MapPin } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { useTheme } from "@/context/ThemeContext";
 
-const mockUserData = {
-  name: "Sarah Johnson",
-  username: "@sarahj",
-  bio: "Tech enthusiast | Coffee lover | Always up for a good meetup",
-  avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
-  location: "San Francisco, CA",
-  followers: 342,
-  following: 128,
-};
+// Usaremos un fetch a la BD en lugar de este mock estático.
+// Se dejan en cero los seguidores temporales hasta tener la colección Follows.
 
 const mockPersonalEvents = [
   {
@@ -70,8 +64,47 @@ export default function DashboardPage() {
   const [mainTab, setMainTab] = useState("posts");
   const [subTab, setSubTab] = useState("personal");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setUserData(data);
+        }
+      } catch (err) {
+        console.error("Error cargando perfil", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Prevenir crasheo si el usuario no cargara por error
+  if (!userData) {
+     return (
+       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+         Por favor inicia sesión.
+       </div>
+     );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -80,36 +113,42 @@ export default function DashboardPage() {
         <div className="w-full mx-auto px-6 md:px-8 lg:px-12 py-8 max-w-[1440px]">
           <div className="max-w-2xl mx-auto lg:mx-0">
             <div className="flex items-start gap-5 mb-6">
-              <div className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden bg-primary/10 flex-shrink-0">
-                <img src={mockUserData.avatar} alt="" className="w-full h-full object-cover" />
+              <div className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden bg-primary/10 flex-shrink-0 flex items-center justify-center">
+                {userData.avatar ? (
+                  <img src={userData.avatar} alt={userData.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-bold text-primary">{userData.name?.[0]?.toUpperCase()}</span>
+                )}
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold mb-1">{mockUserData.name}</h2>
+                <h2 className="text-xl font-bold mb-1">{userData.name}</h2>
                 <p className="text-muted-foreground text-sm mb-3">
-                  {mockUserData.username}
+                  {userData.username || "@" + userData.name.toLowerCase().replace(/\s/g, '')}
                 </p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className={`w-4 h-4 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
-                  <span>{mockUserData.location}</span>
+                  <span>{userData.location || "Ubicación desconocida"}</span>
                 </div>
               </div>
             </div>
 
-            <p className="text-sm mb-6 leading-relaxed">{mockUserData.bio}</p>
+            <p className="text-sm mb-6 leading-relaxed">
+              {userData.bio || "Agrega una descripción para contarle más a tu comunidad sobre ti."}
+            </p>
 
             <div className="flex gap-8 mb-6">
               <button className="text-center hover:opacity-80 transition-opacity">
-                <p className="text-xl font-bold text-foreground">{mockUserData.followers}</p>
+                <p className="text-xl font-bold text-foreground">0</p>
                 <p className="text-sm text-muted-foreground">Seguidores</p>
               </button>
               <button className="text-center hover:opacity-80 transition-opacity">
-                <p className="text-xl font-bold text-foreground">{mockUserData.following}</p>
+                <p className="text-xl font-bold text-foreground">0</p>
                 <p className="text-sm text-muted-foreground">Siguiendo</p>
               </button>
             </div>
 
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 md:flex-initial md:px-8 h-12 rounded-xl">
+              <Button variant="outline" className="flex-1 md:flex-initial md:px-8 h-12 rounded-xl" onClick={() => setIsEditProfileOpen(true)}>
                 Editar perfil
               </Button>
               <Button variant="outline" size="icon" aria-label="Ajustes" onClick={() => setIsSettingsOpen(!isSettingsOpen)}>
@@ -120,8 +159,15 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Settings Modal */}
+      {/* Settings Modals */}
       <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      
+      <EditProfileDialog 
+        open={isEditProfileOpen} 
+        onOpenChange={setIsEditProfileOpen} 
+        userData={userData}
+        onSaveSuccess={(updated) => setUserData(updated)}
+      />
 
       {/* Tabs and Content */}
       <section className="w-full mx-auto px-6 md:px-8 lg:px-12 pt-6 pb-8 max-w-[1440px]" aria-label="Contenido del usuario">

@@ -21,6 +21,22 @@ const UserSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // Don't return password by default
     },
+    username: {
+      type: String,
+      default: "",
+    },
+    bio: {
+      type: String,
+      default: "",
+    },
+    avatar: {
+      type: String,
+      default: "",
+    },
+    location: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );
