@@ -217,7 +217,7 @@ export const mockEvents = {
       category: "Motorsport",
       categories: ["Motorsport"],
       status: "active",
-      description: "El histórico torneo de resistencia extrema. Vehículos de carreras operando las 24 horas del día.",
+      description: "El histórico torneo de resistencia extrema. Vehículo de carreras operando las 24 horas del día.",
       author: { name: "Le Mans Official", initials: "LM", avatarColor: "#dc2626", slug: "le-mans" },
       userGallery: [],
     },
