@@ -2,10 +2,6 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.multimeet_MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error("Por favor define la variable de entorno multimeet_MONGODB_URI en .env.local");
-}
-
 let cached = global.mongoose;
 
 if (!cached) {
@@ -13,6 +9,10 @@ if (!cached) {
 }
 
 async function connectToDatabase() {
+  if (!MONGODB_URI) {
+    throw new Error("Por favor define la variable de entorno multimeet_MONGODB_URI en .env.local");
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
