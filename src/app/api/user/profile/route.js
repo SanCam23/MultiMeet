@@ -1,29 +1,11 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
+import { auth, currentUser, createClerkClient } from "@clerk/nextjs/server";
 import connectToDatabase from "@/lib/mongoose";
 import User from "@/models/User";
 
-// Función auxiliar para obtener el usuario actual desde el JWT
-async function getUserFromCookies() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret_key_multimeet");
-    return decoded.id; // Retorna el ID del usuario
-  } catch (error) {
-    return null;
-  }
-}
-
 export async function GET() {
   try {
-    const userId = await getUserFromCookies();
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
@@ -31,22 +13,52 @@ export async function GET() {
 
     await connectToDatabase();
 
-    const user = await User.findById(userId).select("-password");
+    // Buscamos al usuario en Mongoose por su ID de Clerk
+    let user = await User.findOne({ clerkId: userId });
 
+    // UPSERT: Si el usuario existe en Clerk pero todavía no en nuestra BD de Mongo, lo creamos "al vuelo".
     if (!user) {
-      return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 });
+      const clerkUser = await currentUser();
+      
+      if (!clerkUser) {
+        return NextResponse.json({ message: "Error al obtener datos de Clerk" }, { status: 500 });
+      }
+
+      const email = clerkUser.emailAddresses[0]?.emailAddress || "";
+      const name = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Usuario sin nombre";
+      const avatar = clerkUser.imageUrl || "";
+
+      user = await User.create({
+        clerkId: userId,
+        email,
+        name,
+        avatar,
+        username: clerkUser.username || "",
+        bio: "",
+        location: "",
+      });
+      console.log("Usuario creado automáticamente en MongoDB desde Clerk:", user);
+    } else {
+      // Sincronizar Avatar en Tiempo Real al cargar el perfil
+      const clerkUser = await currentUser();
+      if (clerkUser && clerkUser.imageUrl && clerkUser.imageUrl !== user.avatar) {
+        user.avatar = clerkUser.imageUrl;
+        await user.save();
+        console.log("Avatar actualizado on-the-fly desde Clerk.");
+      }
     }
 
     return NextResponse.json(user, { status: 200 });
   } catch (error) {
-    console.error("Error al obtener perfil:", error);
+    console.error("Error al obtener o crear perfil de Clerk:", error);
     return NextResponse.json({ message: "Error al obtener perfil del usuario" }, { status: 500 });
   }
 }
 
 export async function PUT(request) {
   try {
-    const userId = await getUserFromCookies();
+    const { userId } = await auth();
+    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
     if (!userId) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
@@ -54,17 +66,47 @@ export async function PUT(request) {
 
     const { name, username, bio, avatar, location } = await request.json();
 
+    // 1. SINCRONIZAR CON CLERK
+    // Protegemos contra campos undefined
+    const safeName = (name || "").trim() || "Usuario sin nombre";
+    const nameParts = safeName.split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
+    try {
+      // Limpiamos el username para Clerk
+      const cleanUsername = username?.startsWith("@") ? username.slice(1) : username;
+      
+      const updateData = {
+        firstName,
+        lastName,
+      };
+
+      // Clerk solo permite minúsculas, números y guiones en el username
+      if (cleanUsername) {
+        updateData.username = cleanUsername.toLowerCase().trim().replace(/\s+/g, '-');
+      }
+
+      await clerk.users.updateUser(userId, updateData);
+      console.log("Clerk Sync exitoso.");
+    } catch (clerkError) {
+      console.warn("Aviso: Sincronización con Clerk fallida (probablemente username ya en uso):", clerkError.message);
+    }
+
     await connectToDatabase();
 
-    // Actualiza solo los campos permitidos y retorna el nuevo documento
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: { name, username, bio, avatar, location } },
+    // 2. ACTUALIZAR MONGODB
+    const clerkUser = await currentUser();
+    const finalAvatar = clerkUser?.imageUrl || avatar;
+
+    const updatedUser = await User.findOneAndUpdate(
+      { clerkId: userId },
+      { $set: { name: safeName, username, bio, avatar: finalAvatar, location } },
       { new: true, runValidators: true }
-    ).select("-password");
+    );
 
     if (!updatedUser) {
-      return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 });
+      return NextResponse.json({ message: "Usuario no encontrado en la Base de Datos" }, { status: 404 });
     }
 
     return NextResponse.json(updatedUser, { status: 200 });

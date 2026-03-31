@@ -6,6 +6,7 @@ import { User, Home, Search, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
 import { useTheme } from "@/context/ThemeContext";
+import { Show, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
 
 export function TopAppBar() {
   const pathname = usePathname();
@@ -76,13 +77,31 @@ export function TopAppBar() {
           {/* Right side icons */}
           <div className="flex items-center gap-4 flex-1 justify-end">
             <NotificationsPopover />
-            <Link
-              href="/dashboard"
-              className="hidden md:block p-2 hover:bg-muted/50 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Perfil de usuario"
-            >
-              <User className={`w-6 h-6 ${isHighContrast ? "text-yellow-300" : "text-muted-foreground"}`} aria-hidden="true" />
-            </Link>
+            <div className="hidden md:flex items-center gap-3">
+              <Show when="signed-out">
+                <SignInButton mode="modal">
+                  <button className={`px-4 py-2 hover:bg-muted/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-ring font-medium ${isHighContrast ? "text-yellow-300" : "text-muted-foreground hover:text-foreground"}`}>
+                    Iniciar Sesión
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className={`px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-ring font-medium`}>
+                    Registrarse
+                  </button>
+                </SignUpButton>
+              </Show>
+              <Show when="signed-in">
+                <UserButton>
+                  <UserButton.MenuItems>
+                    <UserButton.Link
+                      label="Mi Panel de Control"
+                      labelIcon={<User className="w-4 h-4" />}
+                      href="/dashboard"
+                    />
+                  </UserButton.MenuItems>
+                </UserButton>
+              </Show>
+            </div>
           </div>
         </div>
       </div>

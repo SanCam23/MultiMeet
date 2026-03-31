@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import React from "react";
 import { usePathname } from "next/navigation";
 import { Home, Search, PlusCircle, User } from "lucide-react";
+import { Show, SignInButton } from "@clerk/nextjs";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -43,26 +45,69 @@ export function BottomNav() {
           }
 
           return (
-            <Link
-              key={item.path}
-              href={item.path}
-              className="flex flex-col items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-1"
-              aria-label={item.label}
-            >
-              <Icon
-                className={`w-6 h-6 ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
-                aria-hidden="true"
-              />
-              <span
-                className={`text-xs ${
-                  isActive ? "text-primary font-medium" : "text-muted-foreground"
-                }`}
-              >
-                {item.label}
-              </span>
-            </Link>
+            <React.Fragment key={item.path}>
+              {item.label === "Perfil" ? (
+                <>
+                  <Show when="signed-in">
+                    <Link
+                      href={item.path}
+                      className="flex flex-col items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-1"
+                      aria-label={item.label}
+                    >
+                      <Icon
+                        className={`w-6 h-6 ${
+                          isActive ? "text-primary" : "text-muted-foreground"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <span
+                        className={`text-xs ${
+                          isActive ? "text-primary font-medium" : "text-muted-foreground"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  </Show>
+                  <Show when="signed-out">
+                    <SignInButton mode="modal">
+                      <button
+                        className="flex flex-col items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-1"
+                        aria-label="Iniciar Sesión"
+                      >
+                        <User
+                          className={`w-6 h-6 text-muted-foreground`}
+                          aria-hidden="true"
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          Entrar
+                        </span>
+                      </button>
+                    </SignInButton>
+                  </Show>
+                </>
+              ) : (
+                <Link
+                  href={item.path}
+                  className="flex flex-col items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-1"
+                  aria-label={item.label}
+                >
+                  <Icon
+                    className={`w-6 h-6 ${
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span
+                    className={`text-xs ${
+                      isActive ? "text-primary font-medium" : "text-muted-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              )}
+            </React.Fragment>
           );
         })}
       </div>

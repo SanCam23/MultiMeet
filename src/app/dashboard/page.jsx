@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Settings, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
@@ -61,6 +62,7 @@ const mockPastEvents = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [mainTab, setMainTab] = useState("posts");
   const [subTab, setSubTab] = useState("personal");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -106,6 +108,12 @@ export default function DashboardPage() {
      );
   }
 
+  const handleSaveSuccess = (updated) => {
+    setUserData(updated);
+    // Disparamos un refresco del router para que el layout y Clerk se enteren del cambio inmediatamente
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Profile Header */}
@@ -115,7 +123,12 @@ export default function DashboardPage() {
             <div className="flex items-start gap-5 mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden bg-primary/10 flex-shrink-0 flex items-center justify-center">
                 {userData.avatar ? (
-                  <img src={userData.avatar} alt={userData.name} className="w-full h-full object-cover" />
+                  <img 
+                    key={userData.avatar} 
+                    src={`${userData.avatar}${userData.avatar.includes('?') ? '&' : '?'}v=${new Date().getTime()}`} 
+                    alt={userData.name} 
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
                   <span className="text-3xl font-bold text-primary">{userData.name?.[0]?.toUpperCase()}</span>
                 )}
@@ -166,7 +179,7 @@ export default function DashboardPage() {
         open={isEditProfileOpen} 
         onOpenChange={setIsEditProfileOpen} 
         userData={userData}
-        onSaveSuccess={(updated) => setUserData(updated)}
+        onSaveSuccess={handleSaveSuccess}
       />
 
       {/* Tabs and Content */}

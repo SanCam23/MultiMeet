@@ -1,23 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X, Save } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { X, Save, Camera, Loader2 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { useUser } from "@clerk/nextjs";
 
 export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess }) {
   const { theme } = useTheme();
+  const { user } = useUser();
+  const fileInputRef = useRef(null);
   
   const [formData, setFormData] = useState({
+    name: "",
     username: "",
     bio: "",
     avatar: "",
     location: "",
   });
   
+  const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -25,15 +31,20 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
       document.body.style.overflow = "hidden";
       if (userData) {
         setFormData({
+          name: userData.name || "",
           username: userData.username || "",
           bio: userData.bio || "",
           avatar: userData.avatar || "",
           location: userData.location || "",
         });
+        setPreviewUrl(userData.avatar || "");
       }
     } else {
       document.body.style.overflow = "unset";
       setError("");
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
     }
     return () => {
       document.body.style.overflow = "unset";
@@ -44,6 +55,36 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Vista previa instantánea (Local)
+    const localPreview = URL.createObjectURL(file);
+    setPreviewUrl(localPreview);
+
+    try {
+      setUploading(true);
+      setError("");
+      
+      // Subimos la imagen directamente a Clerk
+      const response = await user.setProfileImage({ file });
+      
+      // Intentamos obtener la nueva URL. Clerk a veces la devuelve en el objeto, o lo actualiza en el hook
+      const newUrl = response?.imageUrl || user.imageUrl;
+      
+      // Actualizamos nuestro formData con la URL REAL de Clerk
+      setFormData(prev => ({ ...prev, avatar: newUrl }));
+
+    } catch (err) {
+      console.error("Error subiendo imagen:", err);
+      setError("No se pudo subir la imagen. Inténtalo de nuevo.");
+      setPreviewUrl(formData.avatar);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -66,6 +107,7 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
         throw new Error(data.message || "Error al actualizar perfil");
       }
 
+      // Aseguramos que la UI reciba los datos finales (incluyendo el avatar procesado por el backend)
       onSaveSuccess(data);
       onOpenChange(false);
     } catch (err) {
@@ -100,25 +142,60 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
         </div>
 
         <div className="overflow-y-auto flex-1 overscroll-contain px-6 py-5">
-          <form id="edit-profile-form" onSubmit={handleSubmit} className="space-y-4">
+          <form id="edit-profile-form" onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="p-3 bg-red-100/20 border border-red-500/50 text-red-500 rounded-xl text-sm text-center">
                 {error}
               </div>
             )}
             
-            <div>
-              <Label htmlFor="avatar" className="mb-2 block">Foto de Perfil (URL)</Label>
-              <Input
-                id="avatar"
-                type="url"
-                placeholder="https://ejemplo.com/foto.jpg"
-                className="h-12 rounded-xl"
-                value={formData.avatar}
-                onChange={handleChange}
+            <div className="flex flex-col items-center gap-4 py-2">
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-full border-4 border-secondary/20 overflow-hidden bg-primary/5 flex items-center justify-center">
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Vista previa" className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera className="w-8 h-8 text-muted-foreground" />
+                  )}
+                  {uploading && (
+                    <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute bottom-1 right-1 p-2 bg-primary text-primary-foreground rounded-full shadow-lg hover:scale-105 transition-transform disabled:opacity-50"
+                  aria-label="Cambiar foto de perfil"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
+              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
               />
+              <p className="text-xs text-muted-foreground">Haz clic en la cámara para subir una foto desde tu PC</p>
             </div>
             
+            <div>
+              <Label htmlFor="name" className="mb-2 block">Nombre completo</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Tu nombre completo"
+                className="h-12 rounded-xl"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
             <div>
               <Label htmlFor="username" className="mb-2 block">Nombre de usuario</Label>
               <Input
@@ -160,10 +237,15 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
            <Button type="button" variant="outline" className="mr-3 rounded-xl h-10" onClick={() => onOpenChange(false)}>
              Cancelar
            </Button>
-           <Button type="submit" form="edit-profile-form" disabled={loading} className="rounded-xl h-10 flex items-center gap-2">
-             <Save className="w-4 h-4" />
-             {loading ? "Guardando..." : "Guardar"}
-           </Button>
+            <Button 
+              type="submit" 
+              form="edit-profile-form" 
+              disabled={loading || uploading} 
+              className="rounded-xl h-10 flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {loading ? "Guardando..." : uploading ? "Subiendo..." : "Guardar"}
+            </Button>
         </div>
       </div>
     </div>
