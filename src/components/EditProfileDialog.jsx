@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { X, Save, Camera, Loader2 } from "lucide-react";
+import { X, Save, Camera, Loader2, MapPin } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { useUser } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
+
+const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
+  ssr: false,
+  loading: () => <div className="h-48 w-full bg-muted rounded-2xl animate-pulse flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed border-border"><MapPin className="w-4 h-4 mr-2 animate-bounce" /> Cargando mapa...</div>
+});
 
 export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess }) {
   const { theme } = useTheme();
@@ -19,6 +25,8 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
     bio: "",
     avatar: "",
     location: "",
+    lat: null,
+    lng: null,
   });
   
   const [previewUrl, setPreviewUrl] = useState("");
@@ -36,6 +44,8 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
           bio: userData.bio || "",
           avatar: userData.avatar || "",
           location: userData.location || "",
+          lat: userData.lat || null,
+          lng: userData.lng || null,
         });
         setPreviewUrl(userData.avatar || "");
       }
@@ -210,13 +220,13 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
             
             <div>
               <Label htmlFor="location" className="mb-2 block">Ubicación</Label>
-              <Input
-                id="location"
-                type="text"
-                placeholder="Ciudad, País"
-                className="h-12 rounded-xl"
+              <LocationPicker 
                 value={formData.location}
-                onChange={handleChange}
+                lat={formData.lat}
+                lng={formData.lng}
+                onChange={({ address, lat, lng }) => {
+                  setFormData(prev => ({ ...prev, location: address, lat, lng }));
+                }}
               />
             </div>
             

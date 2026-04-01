@@ -32,6 +32,14 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    lat: {
+      type: Number,
+      default: null,
+    },
+    lng: {
+      type: Number,
+      default: null,
+    },
   },
   { timestamps: true }
 );

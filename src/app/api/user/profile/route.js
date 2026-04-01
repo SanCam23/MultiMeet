@@ -16,7 +16,7 @@ export async function GET() {
     // Buscamos al usuario en Mongoose por su ID de Clerk
     let user = await User.findOne({ clerkId: userId });
 
-    // UPSERT: Si el usuario existe en Clerk pero todavía no en nuestra BD de Mongo, lo creamos "al vuelo".
+    // UPSERT: Si el usuario existe en Clerk pero todavía no en nuestra BD de Mongo, lo creamos/sincronizamos
     if (!user) {
       const clerkUser = await currentUser();
       
@@ -28,16 +28,29 @@ export async function GET() {
       const name = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Usuario sin nombre";
       const avatar = clerkUser.imageUrl || "";
 
-      user = await User.create({
-        clerkId: userId,
-        email,
-        name,
-        avatar,
-        username: clerkUser.username || "",
-        bio: "",
-        location: "",
-      });
-      console.log("Usuario creado automáticamente en MongoDB desde Clerk:", user);
+      // IMPORTANTE: Antes de crear, verificamos si ya existe alguien con ese EMAIL
+      // Esto sucede si el usuario borró su cuenta y volvió con el mismo email pero distinto clerkId
+      user = await User.findOne({ email });
+
+      if (user) {
+        // Si existe por email, simplemente actualizamos su clerkId (vinculación)
+        user.clerkId = userId;
+        if (!user.avatar) user.avatar = avatar; // No sobreescribimos si ya tiene uno personalizado
+        await user.save();
+        console.log("Usuario vinculado por email existente:", email);
+      } else {
+        // Si no existe ni por clerkId ni por email, lo creamos de cero
+        user = await User.create({
+          clerkId: userId,
+          email,
+          name,
+          avatar,
+          username: clerkUser.username || "",
+          bio: "",
+          location: "",
+        });
+        console.log("Usuario creado automáticamente en MongoDB desde Clerk:", user);
+      }
     } else {
       // Sincronizar Avatar en Tiempo Real al cargar el perfil
       const clerkUser = await currentUser();
@@ -64,7 +77,7 @@ export async function PUT(request) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const { name, username, bio, avatar, location } = await request.json();
+    const { name, username, bio, avatar, location, lat, lng } = await request.json();
 
     // 1. SINCRONIZAR CON CLERK
     // Protegemos contra campos undefined
@@ -101,8 +114,8 @@ export async function PUT(request) {
 
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
-      { $set: { name: safeName, username, bio, avatar: finalAvatar, location } },
-      { new: true, runValidators: true }
+      { $set: { name: safeName, username, bio, avatar: finalAvatar, location, lat, lng } },
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updatedUser) {
