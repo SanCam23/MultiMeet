@@ -115,3 +115,30 @@ export async function PUT(request) {
     return NextResponse.json({ message: "Error al actualizar perfil del usuario" }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  try {
+    const { userId } = await auth();
+    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+
+    if (!userId) {
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
+
+    await connectToDatabase();
+
+    // 1. Eliminar de MongoDB
+    await User.findOneAndDelete({ clerkId: userId });
+    console.log(`Usuario ${userId} eliminado de MongoDB manualmente.`);
+
+    // 2. Eliminar de Clerk (esto disparará la desconexión del usuario)
+    await clerk.users.deleteUser(userId);
+    console.log(`Usuario ${userId} eliminado de Clerk manualmente.`);
+
+    return NextResponse.json({ message: "Cuenta eliminada con éxito" }, { status: 200 });
+  } catch (error) {
+    console.error("Error al eliminar cuenta:", error);
+    return NextResponse.json({ message: "Error al eliminar la cuenta" }, { status: 500 });
+  }
+}
+

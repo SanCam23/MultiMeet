@@ -196,6 +196,38 @@ export function SettingsDialog({ open, onOpenChange }) {
               </button>
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-border mt-8 mb-5" />
+
+          {/* Dangerous Section: Delete Account */}
+          <div className="mb-8">
+            <h3 className="font-semibold text-lg text-destructive mb-1">Zona peligrosa</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Esta acción es irreversible y borrará todos tus datos.
+            </p>
+            <button
+              onClick={async () => {
+                if (confirm("¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.")) {
+                  try {
+                    const res = await fetch("/api/user/profile", { method: "DELETE" });
+                    if (res.ok) {
+                      // Usamos window.location para forzar un reinicio completo
+                      window.location.href = "/";
+                    } else {
+                      alert("Error al eliminar la cuenta");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("Error al eliminar la cuenta");
+                  }
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-semibold focus:outline-none focus:ring-2 focus:ring-destructive"
+            >
+              Eliminar mi cuenta definitivamente
+            </button>
+          </div>
         </div>
       </div>
     </div>
