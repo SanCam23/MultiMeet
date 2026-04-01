@@ -16,7 +16,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es" suppressHydrationWarning>
       <body className="antialiased">
-        <ClerkProvider localization={esES}>
+        <ClerkProvider 
+          localization={esES}
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        >
           <ThemeProvider>
             <UserSync />
             <ClientLayout>{children}</ClientLayout>
