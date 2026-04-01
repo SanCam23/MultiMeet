@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Image, Video } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -11,8 +11,11 @@ import { getEventById } from "@/data/events";
 import { PreviousEditions } from "@/components/PreviousEditions";
 import { StarRating } from "@/components/StarRating";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth, useClerk } from "@clerk/nextjs";
 
 export default function ItemDetailPage() {
+  const { userId } = useAuth();
+  const { openSignIn } = useClerk();
   const router = useRouter();
   const params = useParams();
   const [showSharePopup, setShowSharePopup] = useState(false);
@@ -48,17 +51,37 @@ export default function ItemDetailPage() {
   };
 
   const handleJoin = () => {
+    if (!userId) {
+      openSignIn();
+      return;
+    }
     alert("¡Te has apuntado al evento!");
   };
 
   const handleUploadMedia = () => {
+    if (!userId) {
+      openSignIn();
+      return;
+    }
     alert("Abriendo selector de archivos...");
   };
 
   const handleRatingSubmit = () => {
+    if (!userId) {
+      openSignIn();
+      return;
+    }
     if (rating > 0) {
       alert(`¡Gracias! Has valorado con ${rating} estrellas.`);
     }
+  };
+
+  const handleFollowToggle = () => {
+    if (!userId) {
+      openSignIn();
+      return;
+    }
+    setIsFollowing(!isFollowing);
   };
 
   return (
@@ -135,7 +158,7 @@ export default function ItemDetailPage() {
               </Link>
             </div>
             <button
-              onClick={() => setIsFollowing(!isFollowing)}
+              onClick={handleFollowToggle}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 isFollowing
                   ? "bg-muted text-foreground"
@@ -333,15 +356,14 @@ function GallerySection({ event, onUpload }) {
 
       <Masonry columnsCount={2} gutter="16px">
         {event.userGallery.map((item) => {
-          const isString = typeof item === "string";
-          const url = isString ? item : item.url;
-          const key = isString ? item : item.id;
+          const url = typeof item === "string" ? item : item.url;
+          const key = typeof item === "string" ? item : item.id;
 
           return (
             <div key={key} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
               <div className="relative">
-                <img src={url} alt={isString ? "Galería" : `Subido por ${item.username}`} className="w-full h-auto" />
-                {!isString && item.type === "video" && (
+                <img src={url} alt={typeof item === "string" ? "Galería" : `Subido por ${item.username}`} className="w-full h-auto" />
+                {typeof item !== "string" && item.type === "video" && (
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                     <div className="bg-white/90 rounded-full p-3">
                       <Video className="w-6 h-6 text-primary" />
@@ -349,16 +371,13 @@ function GallerySection({ event, onUpload }) {
                   </div>
                 )}
               </div>
-              {!isString && (
+              {typeof item !== "string" && (
                 <div className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium text-sm">{item.username}</p>
                       <p className="text-xs text-muted-foreground">{item.uploadedAt}</p>
                     </div>
-                    {item.type === "image" && (
-                      <Image className="w-4 h-4 text-muted-foreground" />
-                    )}
                   </div>
                 </div>
               )}
