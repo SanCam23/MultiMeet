@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
+import { FollowsDialog } from "@/components/FollowsDialog";
 import { useTheme } from "@/context/ThemeContext";
 
 import { Show, SignInButton } from "@clerk/nextjs";
@@ -70,6 +71,8 @@ export default function DashboardPage() {
   const [subTab, setSubTab] = useState("personal");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isFollowsOpen, setIsFollowsOpen] = useState(false);
+  const [followsType, setFollowsType] = useState("followers"); // "followers" or "following"
   
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +96,18 @@ export default function DashboardPage() {
     };
     fetchProfile();
   }, []);
+
+  const refreshProfile = async () => {
+    try {
+      const res = await fetch("/api/user/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setUserData(data);
+      }
+    } catch (err) {
+      console.error("Error al refrescar perfil", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -147,12 +162,22 @@ export default function DashboardPage() {
                   </p>
 
                   <div className="flex gap-8 mb-6">
-                    <button className="text-center hover:opacity-80 transition-opacity">
-                      <p className="text-xl font-bold text-foreground">0</p>
+                    <button 
+                      onClick={() => { setFollowsType("followers"); setIsFollowsOpen(true); }}
+                      className="text-center hover:opacity-80 transition-opacity bg-transparent border-none p-0 cursor-pointer"
+                    >
+                      <p className="text-xl font-bold text-foreground">
+                        {(userData.followers?.length || 0).toLocaleString()}
+                      </p>
                       <p className="text-sm text-muted-foreground">Seguidores</p>
                     </button>
-                    <button className="text-center hover:opacity-80 transition-opacity">
-                      <p className="text-xl font-bold text-foreground">0</p>
+                    <button 
+                      onClick={() => { setFollowsType("following"); setIsFollowsOpen(true); }}
+                      className="text-center hover:opacity-80 transition-opacity bg-transparent border-none p-0 cursor-pointer"
+                    >
+                      <p className="text-xl font-bold text-foreground">
+                        {(userData.following?.length || 0).toLocaleString()}
+                      </p>
                       <p className="text-sm text-muted-foreground">Siguiendo</p>
                     </button>
                   </div>
@@ -177,6 +202,14 @@ export default function DashboardPage() {
               onOpenChange={setIsEditProfileOpen} 
               userData={userData}
               onSaveSuccess={handleSaveSuccess}
+            />
+
+            <FollowsDialog
+              open={isFollowsOpen}
+              onOpenChange={setIsFollowsOpen}
+              type={followsType}
+              list={followsType === "followers" ? userData.followers : userData.following}
+              onRefresh={refreshProfile}
             />
 
             {/* Tabs and Content */}

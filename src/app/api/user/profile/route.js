@@ -14,7 +14,10 @@ export async function GET() {
     await connectToDatabase();
 
     // Buscamos al usuario en Mongoose por su ID de Clerk
-    let user = await User.findOne({ clerkId: userId });
+    // Populamos seguidores y seguidos para tener sus datos en el Dashboard
+    let user = await User.findOne({ clerkId: userId })
+      .populate("followers", "name username avatar slug")
+      .populate("following", "name username avatar slug");
 
     // UPSERT: Si el usuario existe en Clerk pero todavía no en nuestra BD de Mongo, lo creamos/sincronizamos
     if (!user) {
@@ -58,6 +61,38 @@ export async function GET() {
         user.avatar = clerkUser.imageUrl;
         await user.save();
         console.log("Avatar actualizado on-the-fly desde Clerk.");
+      }
+
+      // INTEGRIDAD: Limpieza de "usuarios fantasma" (referencias a usuarios borrados manualmente o vía Clerk Dashboard)
+      if ((user.following?.length > 0 || user.followers?.length > 0)) {
+        // Extraemos los IDs puros (por si están populados)
+        const allAssociatedIds = [...user.following, ...user.followers]
+          .map(u => (u._id || u).toString());
+
+        // Obtenemos solo los IDs que REALMENTE existen en la colección
+        const validUsersInDB = await User.find({ 
+          _id: { $in: allAssociatedIds } 
+        }).select("_id");
+        
+        const validIdsStrings = validUsersInDB.map(u => u._id.toString());
+        
+        const filteredFollowing = user.following.filter(u => {
+          const id = (u._id || u).toString();
+          return validIdsStrings.includes(id);
+        });
+        
+        const filteredFollowers = user.followers.filter(u => {
+          const id = (u._id || u).toString();
+          return validIdsStrings.includes(id);
+        });
+
+        // Solo guardamos si realmente hemos limpiado algo (evitamos saves innecesarios)
+        if (filteredFollowing.length !== user.following.length || filteredFollowers.length !== user.followers.length) {
+          user.following = filteredFollowing;
+          user.followers = filteredFollowers;
+          await user.save();
+          console.log("Limpieza de integridad completada: Se eliminaron referencias a usuarios inexistentes.");
+        }
       }
     }
 
@@ -140,9 +175,21 @@ export async function DELETE() {
 
     await connectToDatabase();
 
-    // 1. Eliminar de MongoDB
-    await User.findOneAndDelete({ clerkId: userId });
-    console.log(`Usuario ${userId} eliminado de MongoDB manualmente.`);
+    // 1. Obtener ID y limpiar las referencias en otros usuarios (Seguidores/Siguiendo)
+    const userToDelete = await User.findOne({ clerkId: userId });
+    
+    if (userToDelete) {
+      const mongoId = userToDelete._id;
+      // Eliminamos rastro de este usuario en las listas de seguimiento de todos los demás
+      await User.updateMany(
+        {}, 
+        { $pull: { followers: mongoId, following: mongoId } }
+      );
+      
+      // Eliminar el documento del usuario
+      await User.findByIdAndDelete(mongoId);
+      console.log(`Usuario ${userId} (${mongoId}) y sus referencias eliminados de MongoDB.`);
+    }
 
     // 2. Eliminar de Clerk (esto disparará la desconexión del usuario)
     await clerk.users.deleteUser(userId);

@@ -11,6 +11,7 @@ import { getEventById } from "@/data/events";
 import { PreviousEditions } from "@/components/PreviousEditions";
 import { StarRating } from "@/components/StarRating";
 import { useTheme } from "@/context/ThemeContext";
+import { FollowButton } from "@/components/FollowButton";
 import { useAuth, useClerk } from "@clerk/nextjs";
 
 export default function ItemDetailPage() {
@@ -19,7 +20,6 @@ export default function ItemDetailPage() {
   const router = useRouter();
   const params = useParams();
   const [showSharePopup, setShowSharePopup] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [rating, setRating] = useState(0);
   const [activeTab, setActiveTab] = useState("gallery");
   const { theme } = useTheme();
@@ -74,14 +74,6 @@ export default function ItemDetailPage() {
     if (rating > 0) {
       alert(`¡Gracias! Has valorado con ${rating} estrellas.`);
     }
-  };
-
-  const handleFollowToggle = () => {
-    if (!userId) {
-      openSignIn();
-      return;
-    }
-    setIsFollowing(!isFollowing);
   };
 
   return (
@@ -157,28 +149,10 @@ export default function ItemDetailPage() {
                 {event.author.name}
               </Link>
             </div>
-            <button
-              onClick={handleFollowToggle}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                isFollowing
-                  ? "bg-muted text-foreground"
-                  : isHighContrast
-                  ? "bg-primary text-black"
-                  : "bg-primary text-white"
-              }`}
-            >
-              {isFollowing ? (
-                <>
-                  <UserCheck className="w-4 h-4" />
-                  Siguiendo
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" />
-                  Seguir
-                </>
-              )}
-            </button>
+            <FollowButton 
+              targetUsername={event.author.slug}
+              className="px-6 py-2"
+            />
           </div>
         )}
 

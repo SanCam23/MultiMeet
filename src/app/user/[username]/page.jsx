@@ -1,29 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, MapPin, UserPlus, UserCheck, Calendar, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, MapPin, Calendar, Users, Loader2 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
-import { mockPublicUsers, getEventById } from "@/data/events";
+import { FollowButton } from "@/components/FollowButton";
+import { getEventById } from "@/data/events";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [followersCount, setFollowersCount] = useState(0);
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
   const username = params?.username;
-  const user = mockPublicUsers[username];
+
+  useEffect(() => {
+    async function fetchUser() {
+      if (!username) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/user/username/${username}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+          setFollowersCount(data.followers?.length || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUser();
+  }, [username]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse">Cargando perfil...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold mb-2">Usuario no encontrado</h2>
-          <p className="text-muted-foreground mb-4">El perfil que buscas no existe.</p>
+          <p className="text-muted-foreground mb-4">El perfil que buscas no existe o ha sido eliminado.</p>
           <Button onClick={() => router.push("/")}>Volver al inicio</Button>
         </div>
       </div>
@@ -33,6 +64,10 @@ export default function UserProfilePage() {
   const createdEvents = (user.createdEvents || [])
     .map((id) => getEventById(id))
     .filter(Boolean);
+
+  const initials = user.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
@@ -55,57 +90,47 @@ export default function UserProfilePage() {
         <div className="max-w-2xl mx-auto lg:mx-0">
           <div className="flex items-start gap-5 mb-6">
             {user.avatar ? (
-              <div className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden flex-shrink-0">
+              <div className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden flex-shrink-0 bg-muted">
                 <img src={user.avatar} alt="" className="w-full h-full object-cover" />
               </div>
             ) : (
               <div
-                className="w-24 h-24 rounded-full border-4 border-secondary/20 flex-shrink-0 flex items-center justify-center text-white text-2xl font-bold"
-                style={{ backgroundColor: user.avatarColor }}
+                className="w-24 h-24 rounded-full border-4 border-secondary/20 flex-shrink-0 flex items-center justify-center text-white text-2xl font-bold bg-primary"
               >
-                {user.initials}
+                {initials}
               </div>
             )}
             <div className="flex-1">
               <h2 className="text-xl font-bold mb-1">{user.name}</h2>
               <p className="text-muted-foreground text-sm mb-3">{user.username}</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className={`w-4 h-4 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} />
-                <span>{user.location}</span>
-              </div>
+              {user.location && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className={`w-4 h-4 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} />
+                  <span>{user.location}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          <p className="text-sm mb-6 leading-relaxed">{user.bio}</p>
+          {user.bio && <p className="text-sm mb-6 leading-relaxed text-balance">{user.bio}</p>}
 
           <div className="flex gap-8 mb-6">
-            <button className="text-center hover:opacity-80 transition-opacity">
-              <p className="text-xl font-bold text-foreground">{user.followers.toLocaleString()}</p>
+            <div className="text-left">
+              <p className="text-xl font-bold text-foreground">{followersCount.toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">Seguidores</p>
-            </button>
-            <button className="text-center hover:opacity-80 transition-opacity">
-              <p className="text-xl font-bold text-foreground">{user.following.toLocaleString()}</p>
+            </div>
+            <div className="text-left">
+              <p className="text-xl font-bold text-foreground">{(user.following?.length || 0).toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">Siguiendo</p>
-            </button>
+            </div>
           </div>
 
-          <Button
-            onClick={() => setIsFollowing(!isFollowing)}
-            variant={isFollowing ? "outline" : "default"}
-            className="h-12 rounded-xl px-8"
-          >
-            {isFollowing ? (
-              <>
-                <UserCheck className="w-5 h-5 mr-2" />
-                Siguiendo
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-5 h-5 mr-2" />
-                Seguir
-              </>
-            )}
-          </Button>
+          <FollowButton 
+            targetId={user._id} 
+            size="lg" 
+            className="h-12 px-10"
+            onFollowToggle={(isFollowing, count) => setFollowersCount(count)}
+          />
         </div>
 
         {/* Created Events */}

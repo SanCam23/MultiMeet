@@ -20,6 +20,11 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    slug: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     bio: {
       type: String,
       default: "",
@@ -40,6 +45,18 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );
