@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, MapPin, Calendar, Tag, Image as ImageIcon, PlusCircle } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -17,10 +18,71 @@ const categories = [
 
 export default function UploadPage() {
   const router = useRouter();
+  const coverImageInputRef = useRef(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [formType, setFormType] = useState("new");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [maxParticipants, setMaxParticipants] = useState("");
+  const [coverImage, setCoverImage] = useState("");
+  const [coverImageName, setCoverImageName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState("");
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
+
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
+      reader.readAsDataURL(file);
+    });
+
+  const handleCoverImageClick = () => {
+    coverImageInputRef.current?.click();
+  };
+
+  const handleCoverImageChange = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setSubmitError("Selecciona un archivo de imagen válido.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSubmitError("La imagen supera el límite de 5MB.");
+      return;
+    }
+
+    try {
+      setSubmitError("");
+      const dataUrl = await readFileAsDataUrl(file);
+      setCoverImage(dataUrl);
+      setCoverImageName(file.name);
+    } catch (error) {
+      setSubmitError(error.message || "No se pudo cargar la imagen.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handleRemoveCoverImage = () => {
+    setCoverImage("");
+    setCoverImageName("");
+    if (coverImageInputRef.current) {
+      coverImageInputRef.current.value = "";
+    }
+  };
 
   const toggleCategory = (category) => {
     if (selectedCategories.includes(category)) {
@@ -30,10 +92,72 @@ export default function UploadPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("¡Meetup creado con éxito!");
-    router.push("/");
+
+    setSubmitError("");
+    setSubmitSuccess("");
+
+    if (selectedCategories.length === 0) {
+      setSubmitError("Selecciona al menos una categoría.");
+      return;
+    }
+
+    const dateTime = new Date(`${date}T${time}`);
+    if (Number.isNaN(dateTime.getTime())) {
+      setSubmitError("La fecha y hora no son válidas.");
+      return;
+    }
+
+    if (dateTime.getTime() <= Date.now()) {
+      setSubmitError("La fecha y hora del evento deben ser futuras.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const payload = {
+        title,
+        description,
+        dateTime: dateTime.toISOString(),
+        locationText: location,
+        categories: selectedCategories,
+        coverImage,
+        maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
+      };
+
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "No se pudo crear el evento");
+      }
+
+      setSubmitSuccess("Evento creado correctamente en la base de datos.");
+      setTitle("");
+      setDescription("");
+      setLocation("");
+      setDate("");
+      setTime("");
+      setMaxParticipants("");
+      setSelectedCategories([]);
+
+      setTimeout(() => {
+        router.push("/categories");
+      }, 1200);
+    } catch (error) {
+      setSubmitError(error.message || "Ocurrió un error al crear el evento.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -83,17 +207,74 @@ export default function UploadPage() {
 
           {formType === "new" ? (
             <form onSubmit={handleSubmit} className="space-y-8">
+              {(submitError || submitSuccess) && (
+                <div
+                  className={`rounded-xl border px-4 py-3 text-sm ${
+                    submitError
+                      ? "border-destructive/30 bg-destructive/10 text-destructive"
+                      : "border-green-600/30 bg-green-600/10 text-green-700"
+                  }`}
+                >
+                  {submitError || submitSuccess}
+                </div>
+              )}
+
               {/* Cover Image */}
               <div>
                 <Label className="mb-3 block">Imagen de portada</Label>
-                <div className="border-2 border-dashed border-border rounded-2xl h-48 flex flex-col items-center justify-center gap-3 bg-card hover:bg-muted/20 transition-colors cursor-pointer">
-                  <ImageIcon className="w-12 h-12 text-secondary" aria-hidden="true" />
-                  <Button type="button" variant="outline" size="sm" className="rounded-xl">
-                    Subir imagen
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    JPG, PNG o GIF (máx. 5MB)
-                  </p>
+                <input
+                  ref={coverImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCoverImageChange}
+                />
+
+                <div className="border-2 border-dashed border-border rounded-2xl min-h-48 flex flex-col items-center justify-center gap-3 bg-card hover:bg-muted/20 transition-colors px-4 py-6">
+                  {coverImage ? (
+                    <div className="w-full max-w-md space-y-4">
+                      <div className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
+                        <Image
+                          src={coverImage}
+                          alt="Vista previa de la portada"
+                          width={1200}
+                          height={700}
+                          unoptimized
+                          className="w-full h-52 object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <p className="text-sm text-muted-foreground truncate max-w-full">
+                          {coverImageName || "Imagen seleccionada"}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl"
+                          onClick={handleRemoveCoverImage}
+                        >
+                          Quitar imagen
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-12 h-12 text-secondary" aria-hidden="true" />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={handleCoverImageClick}
+                      >
+                        Subir imagen
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        JPG, PNG o GIF (máx. 5MB)
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -104,6 +285,8 @@ export default function UploadPage() {
                   id="title"
                   placeholder="Dale un título atractivo a tu meetup"
                   className="h-12 rounded-xl"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   required
                 />
               </div>
@@ -115,6 +298,8 @@ export default function UploadPage() {
                   id="description"
                   placeholder="Cuéntale a la gente de qué trata tu meetup..."
                   className="min-h-32 rounded-xl"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   required
                 />
               </div>
@@ -153,6 +338,8 @@ export default function UploadPage() {
                   id="location"
                   placeholder="Busca una ubicación..."
                   className="h-12 rounded-xl"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
                   required
                 />
               </div>
@@ -164,11 +351,25 @@ export default function UploadPage() {
                     <Calendar className="w-4 h-4 inline mr-1.5 text-primary" aria-hidden="true" />
                     Fecha
                   </Label>
-                  <Input id="date" type="date" className="h-12 rounded-xl" required />
+                  <Input
+                    id="date"
+                    type="date"
+                    className="h-12 rounded-xl"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <Label htmlFor="time" className="mb-3 block">Hora</Label>
-                  <Input id="time" type="time" className="h-12 rounded-xl" required />
+                  <Input
+                    id="time"
+                    type="time"
+                    className="h-12 rounded-xl"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
 
@@ -182,11 +383,19 @@ export default function UploadPage() {
                   type="number"
                   placeholder="Sin límite"
                   className="h-12 rounded-xl"
+                  value={maxParticipants}
+                  onChange={(e) => setMaxParticipants(e.target.value)}
+                  min="1"
                 />
               </div>
 
-              <Button type="submit" className="w-full h-14 text-base rounded-xl shadow-lg" size="lg">
-                Publicar Meetup
+              <Button
+                type="submit"
+                className="w-full h-14 text-base rounded-xl shadow-lg"
+                size="lg"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Publicando..." : "Publicar Meetup"}
               </Button>
             </form>
           ) : (
