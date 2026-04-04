@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, MapPin, Calendar, Tag, Image as ImageIcon, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,8 @@ export default function UploadPage() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [maxParticipants, setMaxParticipants] = useState("");
-  const [coverImage, setCoverImage] = useState("");
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState("");
   const [coverImageName, setCoverImageName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -35,13 +36,13 @@ export default function UploadPage() {
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
-  const readFileAsDataUrl = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
-      reader.readAsDataURL(file);
-    });
+  useEffect(() => {
+    return () => {
+      if (coverImagePreview) {
+        URL.revokeObjectURL(coverImagePreview);
+      }
+    };
+  }, [coverImagePreview]);
 
   const handleCoverImageClick = () => {
     coverImageInputRef.current?.click();
@@ -66,8 +67,13 @@ export default function UploadPage() {
 
     try {
       setSubmitError("");
-      const dataUrl = await readFileAsDataUrl(file);
-      setCoverImage(dataUrl);
+      if (coverImagePreview) {
+        URL.revokeObjectURL(coverImagePreview);
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      setCoverImageFile(file);
+      setCoverImagePreview(previewUrl);
       setCoverImageName(file.name);
     } catch (error) {
       setSubmitError(error.message || "No se pudo cargar la imagen.");
@@ -77,7 +83,11 @@ export default function UploadPage() {
   };
 
   const handleRemoveCoverImage = () => {
-    setCoverImage("");
+    if (coverImagePreview) {
+      URL.revokeObjectURL(coverImagePreview);
+    }
+    setCoverImageFile(null);
+    setCoverImagePreview("");
     setCoverImageName("");
     if (coverImageInputRef.current) {
       coverImageInputRef.current.value = "";
@@ -117,13 +127,33 @@ export default function UploadPage() {
     try {
       setIsSubmitting(true);
 
+      let coverImageUrl = "";
+
+      if (coverImageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append("file", coverImageFile);
+
+        const uploadResponse = await fetch("/api/uploads/dropbox", {
+          method: "POST",
+          body: imageFormData,
+        });
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData?.error || "No se pudo subir la imagen a Dropbox");
+        }
+
+        coverImageUrl = uploadData.url;
+      }
+
       const payload = {
         title,
         description,
         dateTime: dateTime.toISOString(),
         locationText: location,
         categories: selectedCategories,
-        coverImage,
+        coverImage: coverImageUrl,
         maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
       };
 
@@ -148,6 +178,7 @@ export default function UploadPage() {
       setDate("");
       setTime("");
       setMaxParticipants("");
+      handleRemoveCoverImage();
       setSelectedCategories([]);
 
       setTimeout(() => {
@@ -231,11 +262,11 @@ export default function UploadPage() {
                 />
 
                 <div className="border-2 border-dashed border-border rounded-2xl min-h-48 flex flex-col items-center justify-center gap-3 bg-card hover:bg-muted/20 transition-colors px-4 py-6">
-                  {coverImage ? (
+                  {coverImagePreview ? (
                     <div className="w-full max-w-md space-y-4">
                       <div className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
                         <Image
-                          src={coverImage}
+                          src={coverImagePreview}
                           alt="Vista previa de la portada"
                           width={1200}
                           height={700}
