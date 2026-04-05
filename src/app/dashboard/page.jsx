@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, MapPin, Loader2 } from "lucide-react";
+import { Settings, MapPin, Loader2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
 import { SettingsDialog } from "@/components/SettingsDialog";
@@ -16,18 +16,20 @@ import { UserCircle } from "lucide-react";
 // Usaremos un fetch a la BD en lugar de este mock estático.
 // Se dejan en cero los seguidores temporales hasta tener la colección Follows.
 
-const mockPersonalEvents = [
-  {
-    id: "p1",
-    image: "https://images.unsplash.com/photo-1760642626994-8ebd037f78dc?w=400",
-    title: "Weekly Book Club",
-    date: "Feb 22, 2026",
-    time: "6:00 PM",
-    location: "Local Library, SF",
-    participants: 8,
-    category: "Books",
-  },
-];
+// Helper: convierte un evento de la API al formato que espera EventCard
+function mapEventToCard(ev) {
+  const d = new Date(ev.dateTime);
+  return {
+    id: ev._id,
+    image: ev.coverImage || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400",
+    title: ev.title,
+    date: d.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }),
+    time: d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
+    location: ev.locationText,
+    participants: ev.participantsCount || 0,
+    category: ev.categories?.[0] || "Evento",
+  };
+}
 
 const mockJoinedEvents = [
   {
@@ -69,6 +71,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [mainTab, setMainTab] = useState("posts");
   const [subTab, setSubTab] = useState("personal");
+  const [personalEvents, setPersonalEvents] = useState([]);
+  const [loadingPersonal, setLoadingPersonal] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isFollowsOpen, setIsFollowsOpen] = useState(false);
@@ -95,6 +99,24 @@ export default function DashboardPage() {
       }
     };
     fetchProfile();
+  }, []);
+
+  // Cargar eventos personales del usuario
+  useEffect(() => {
+    const fetchMyEvents = async () => {
+      try {
+        const res = await fetch("/api/events/my");
+        if (res.ok) {
+          const data = await res.json();
+          setPersonalEvents(data.map(mapEventToCard));
+        }
+      } catch (err) {
+        console.error("Error cargando eventos personales", err);
+      } finally {
+        setLoadingPersonal(false);
+      }
+    };
+    fetchMyEvents();
   }, []);
 
   const refreshProfile = async () => {
@@ -304,14 +326,32 @@ export default function DashboardPage() {
               </div>
 
               {/* Event Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8 mt-6">
-                {(mainTab === "posts" && subTab === "personal" ? mockPersonalEvents :
-                  mainTab === "posts" && subTab === "joined" ? mockJoinedEvents :
-                  mainTab === "timeline" && subTab === "upcoming" ? mockJoinedEvents :
-                  mockPastEvents).map((event) => (
-                <EventCard key={event.id} {...event} />
-                ))}
-              </div>
+              {/* Contenido del tab activo */}
+              {mainTab === "posts" && subTab === "personal" && loadingPersonal ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : mainTab === "posts" && subTab === "personal" && personalEvents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                    <Calendar className="w-10 h-10 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Aún no has creado eventos</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm">¡Publica tu primer evento y empieza a conectar con tu comunidad!</p>
+                  <Button onClick={() => router.push("/upload")} className="rounded-xl px-8 h-12 text-base">
+                    Crear evento
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8 mt-6">
+                  {(mainTab === "posts" && subTab === "personal" ? personalEvents :
+                    mainTab === "posts" && subTab === "joined" ? mockJoinedEvents :
+                    mainTab === "timeline" && subTab === "upcoming" ? mockJoinedEvents :
+                    mockPastEvents).map((event) => (
+                  <EventCard key={event.id} {...event} />
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         ) : (
