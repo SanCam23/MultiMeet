@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import connectToDatabase from "@/lib/mongoose";
 import Event from "@/models/Event";
 import User from "@/models/User";
+import Notification from "@/models/Notification";
 
 export async function POST(request, { params }) {
   try {
@@ -36,6 +37,20 @@ export async function POST(request, { params }) {
     }
 
     await event.save();
+    
+    // Crear notificación si se acaba de unir y no es su propio evento
+    if (!isParticipant && event.author.toString() !== user._id.toString()) {
+      try {
+        await Notification.create({
+          recipient: event.author,
+          sender: user._id,
+          type: "eventJoin",
+          event: event._id,
+        });
+      } catch (err) {
+        console.error("Error creating join notification:", err);
+      }
+    }
 
     return NextResponse.json(
       { joined: !isParticipant, participantsCount: event.participantsCount },

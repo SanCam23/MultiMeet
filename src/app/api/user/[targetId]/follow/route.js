@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import connectToDatabase from "@/lib/mongoose";
 import User from "@/models/User";
+import Notification from "@/models/Notification";
 
 export async function GET(req, { params }) {
   try {
@@ -69,6 +70,20 @@ export async function POST(req, { params }) {
 
     await currentUser.save();
     await targetUser.save();
+
+    // Crear notificación si es un nuevo follow
+    if (!isFollowing) {
+      try {
+        await Notification.create({
+          recipient: targetUser._id,
+          sender: currentUser._id,
+          type: "follow",
+        });
+      } catch (err) {
+        console.error("Error creating follow notification:", err);
+      }
+    }
+
     console.log(`[DEBUG] Saved! New Following total: ${currentUser.following.length}, Target Followers total: ${targetUser.followers.length}`);
 
     return NextResponse.json({ 

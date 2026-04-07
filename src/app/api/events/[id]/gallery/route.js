@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import connectToDatabase from "@/lib/mongoose";
 import Event from "@/models/Event";
 import User from "@/models/User";
+import Notification from "@/models/Notification";
 
 export async function POST(request, { params }) {
   try {
@@ -44,6 +45,20 @@ export async function POST(request, { params }) {
 
     event.userGallery.push(memory);
     await event.save();
+    
+    // Crear notificación si sube alguien distinto al autor del evento
+    if (event.author.toString() !== user._id.toString()) {
+      try {
+        await Notification.create({
+          recipient: event.author,
+          sender: user._id,
+          type: "photoUpload",
+          event: event._id,
+        });
+      } catch (err) {
+        console.error("Error creating photo upload notification:", err);
+      }
+    }
 
     // Populate user to return it
     await event.populate("userGallery.user", "name username avatar slug");

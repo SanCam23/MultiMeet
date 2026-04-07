@@ -264,7 +264,7 @@ export default function ItemDetailPage() {
               </Link>
             </div>
             {(!userId || userId !== event.author.clerkId) && (
-              <FollowButton targetUsername={event.author.slug} className="px-6 py-2" />
+              <FollowButton targetId={event.author._id} className="px-6 py-2" />
             )}
           </div>
         )}

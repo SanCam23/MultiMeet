@@ -76,7 +76,9 @@ export function TopAppBar() {
 
           {/* Right side icons */}
           <div className="flex items-center gap-2 md:gap-4 flex-1 basis-0 justify-end">
-            <NotificationsPopover />
+            <Show when="signed-in">
+              <NotificationsPopover />
+            </Show>
             <div className="hidden md:flex items-center gap-3">
               <Show when="signed-out">
                 <SignInButton mode="modal">
