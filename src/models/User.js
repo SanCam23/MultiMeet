@@ -57,6 +57,17 @@ const UserSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    preferences: {
+      theme: {
+        type: String,
+        enum: ["light", "dark", "high-contrast"],
+        default: "light",
+      },
+      largeText: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
   { timestamps: true }
 );
