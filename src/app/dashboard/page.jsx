@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, MapPin, Loader2, Calendar } from "lucide-react";
+import { Settings, MapPin, Loader2, Calendar, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
 import { SettingsDialog } from "@/components/SettingsDialog";
@@ -28,42 +28,21 @@ function mapEventToCard(ev) {
     location: ev.locationText,
     participants: ev.participantsCount || 0,
     category: ev.categories?.[0] || "Evento",
+    dateTime: ev.dateTime,
   };
 }
 
-const mockJoinedEvents = [
+// Mock data removed in favor of real API data
+const mockPastEventsPlaceholder = [
   {
-    id: "1",
-    image: "https://images.unsplash.com/photo-1760642626994-8ebd037f78dc?w=400",
-    title: "Tech Networking Night",
-    date: "Feb 15, 2026",
-    time: "7:00 PM",
-    location: "Downtown Tech Hub",
-    participants: 45,
-    category: "Tech",
-  },
-  {
-    id: "3",
-    image: "https://images.unsplash.com/photo-1644612105654-b6b0a941ecde?w=400",
-    title: "Sunrise Yoga Session",
-    date: "Feb 16, 2026",
-    time: "6:30 AM",
-    location: "Golden Gate Park",
-    participants: 28,
-    category: "Fitness",
-  },
-];
-
-const mockPastEvents = [
-  {
-    id: "finished-1",
-    image: "https://images.unsplash.com/photo-1672841821756-fc04525771c2?w=400",
-    title: "Summer Music Fest 2025",
-    date: "Aug 10, 2025",
-    time: "4:00 PM",
-    location: "Golden Gate Park",
-    participants: 156,
-    category: "Music",
+    id: "empty",
+    title: "Sin eventos pasados",
+    date: "-",
+    time: "-",
+    location: "-",
+    participants: 0,
+    category: "-",
+    image: "https://images.unsplash.com/photo-1672841821756-fc04525771c2?w=400"
   },
 ];
 
@@ -72,7 +51,9 @@ export default function DashboardPage() {
   const [mainTab, setMainTab] = useState("posts");
   const [subTab, setSubTab] = useState("personal");
   const [personalEvents, setPersonalEvents] = useState([]);
+  const [joinedEvents, setJoinedEvents] = useState([]);
   const [loadingPersonal, setLoadingPersonal] = useState(true);
+  const [loadingJoined, setLoadingJoined] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isFollowsOpen, setIsFollowsOpen] = useState(false);
@@ -101,7 +82,7 @@ export default function DashboardPage() {
     fetchProfile();
   }, []);
 
-  // Cargar eventos personales del usuario
+  // Cargar eventos personales y apuntados del usuario
   useEffect(() => {
     const fetchMyEvents = async () => {
       try {
@@ -116,7 +97,23 @@ export default function DashboardPage() {
         setLoadingPersonal(false);
       }
     };
+
+    const fetchJoinedEvents = async () => {
+      try {
+        const res = await fetch("/api/events/joined");
+        if (res.ok) {
+          const data = await res.json();
+          setJoinedEvents(data.map(mapEventToCard));
+        }
+      } catch (err) {
+        console.error("Error cargando eventos apuntados", err);
+      } finally {
+        setLoadingJoined(false);
+      }
+    };
+
     fetchMyEvents();
+    fetchJoinedEvents();
   }, []);
 
   const refreshProfile = async () => {
@@ -249,7 +246,7 @@ export default function DashboardPage() {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    Mis posts
+                    Mis eventos
                   </button>
                   <button
                     role="tab"
@@ -327,7 +324,9 @@ export default function DashboardPage() {
 
               {/* Event Grid */}
               {/* Contenido del tab activo */}
-              {mainTab === "posts" && subTab === "personal" && loadingPersonal ? (
+              {((mainTab === "posts" && subTab === "personal" && loadingPersonal) || 
+                (mainTab === "posts" && subTab === "joined" && loadingJoined) ||
+                (mainTab === "timeline" && loadingJoined)) ? (
                 <div className="flex justify-center py-16">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
@@ -342,12 +341,23 @@ export default function DashboardPage() {
                     Crear evento
                   </Button>
                 </div>
+              ) : mainTab === "posts" && subTab === "joined" && joinedEvents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                    <Users className="w-10 h-10 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No estás apuntado a ningún evento</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm">¡Explora la página principal y apúntate a los que te interesen!</p>
+                  <Button onClick={() => router.push("/")} className="rounded-xl px-8 h-12 text-base">
+                    Explorar eventos
+                  </Button>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8 mt-6">
                   {(mainTab === "posts" && subTab === "personal" ? personalEvents :
-                    mainTab === "posts" && subTab === "joined" ? mockJoinedEvents :
-                    mainTab === "timeline" && subTab === "upcoming" ? mockJoinedEvents :
-                    mockPastEvents).map((event) => (
+                    mainTab === "posts" && subTab === "joined" ? joinedEvents :
+                    mainTab === "timeline" && subTab === "upcoming" ? joinedEvents.filter(e => new Date(e.dateTime) >= new Date()) :
+                    joinedEvents.filter(e => new Date(e.dateTime) < new Date())).map((event) => (
                   <EventCard key={event.id} {...event} />
                   ))}
                 </div>
