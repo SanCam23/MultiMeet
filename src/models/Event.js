@@ -57,6 +57,27 @@ const EventSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    userGallery: [
+      {
+        url: { type: String, required: true },
+        type: { type: String, enum: ["image", "video"], default: "image" },
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
+    ratings: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        value: { type: Number, required: true, min: 1, max: 5 },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
     status: {
       type: String,
       enum: ["active", "finished", "cancelled"],
