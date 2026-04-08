@@ -10,6 +10,16 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { useTheme } from "@/context/ThemeContext";
 import { Show, SignInButton } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
+
+const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 w-full bg-muted rounded-2xl animate-pulse flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed border-border">
+      Cargando mapa...
+    </div>
+  ),
+});
 
 const categories = [
   "Tech", "Social", "Fitness", "Music", "Outdoor", "Food", 
@@ -23,7 +33,11 @@ export default function UploadPage() {
   const [formType, setFormType] = useState("new");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
+  const [locationData, setLocationData] = useState({
+    address: "",
+    lat: null,
+    lng: null,
+  });
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [maxParticipants, setMaxParticipants] = useState("");
@@ -113,6 +127,11 @@ export default function UploadPage() {
       return;
     }
 
+    if (!locationData.address.trim()) {
+      setSubmitError("Selecciona una ubicación.");
+      return;
+    }
+
     const dateTime = new Date(`${date}T${time}`);
     if (Number.isNaN(dateTime.getTime())) {
       setSubmitError("La fecha y hora no son válidas.");
@@ -151,7 +170,9 @@ export default function UploadPage() {
         title,
         description,
         dateTime: dateTime.toISOString(),
-        locationText: location,
+        locationText: locationData.address,
+        lat: locationData.lat,
+        lng: locationData.lng,
         categories: selectedCategories,
         coverImage: coverImageUrl,
         maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
@@ -174,7 +195,7 @@ export default function UploadPage() {
       setSubmitSuccess("Evento creado correctamente en la base de datos.");
       setTitle("");
       setDescription("");
-      setLocation("");
+      setLocationData({ address: "", lat: null, lng: null });
       setDate("");
       setTime("");
       setMaxParticipants("");
@@ -365,13 +386,13 @@ export default function UploadPage() {
                   <MapPin className="w-4 h-4 inline mr-1.5 text-secondary" aria-hidden="true" />
                   Ubicación
                 </Label>
-                <Input
-                  id="location"
-                  placeholder="Busca una ubicación..."
-                  className="h-12 rounded-xl"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  required
+                <LocationPicker
+                  value={locationData.address}
+                  lat={locationData.lat}
+                  lng={locationData.lng}
+                  onChange={({ address, lat, lng }) => {
+                    setLocationData({ address, lat, lng });
+                  }}
                 />
               </div>
 
