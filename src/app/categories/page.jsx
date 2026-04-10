@@ -1,13 +1,22 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search as SearchIcon, SlidersHorizontal, MapPin, Users, Calendar, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search as SearchIcon, SlidersHorizontal, MapPin, Users, Calendar, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { EventCard } from "@/components/EventCard";
 import { Label } from "@/components/ui/Label";
 import { useTheme } from "@/context/ThemeContext";
+import dynamic from "next/dynamic";
+
+const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 w-full bg-muted rounded-2xl animate-pulse flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed border-border">
+      Cargando mapa...
+    </div>
+  ),
+});
 
 const categoriesList = [
   { name: "Tech", icon: "💻" },
@@ -18,32 +27,56 @@ const categoriesList = [
   { name: "Food", icon: "🍕" },
   { name: "Art", icon: "🎨" },
   { name: "Books", icon: "📚" },
+  { name: "Sports", icon: "⚽" },
+  { name: "Gaming", icon: "🎮" },
+  { name: "Professional", icon: "💼" },
 ];
 
-const allEvents = [
-  { id: "s-tech-1", image: "https://images.unsplash.com/photo-1760642626994-8ebd037f78dc?w=400", title: "Tech Networking Night", date: "Feb 15, 2026", time: "7:00 PM", location: "Downtown Tech Hub, San Francisco", participants: 45, category: "Tech", isTrending: true },
-  { id: "s-tech-2", image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400", title: "AI & Machine Learning Meetup", date: "Feb 22, 2026", time: "6:30 PM", location: "Innovation Hub, Palo Alto", participants: 60, category: "Tech" },
-  { id: "s-social-1", image: "https://images.unsplash.com/photo-1759074037385-0ad31887b14f?w=400", title: "Coffee & Conversation Morning", date: "Feb 14, 2026", time: "9:00 AM", location: "Blue Bottle Coffee, Oakland", participants: 12, category: "Social" },
-  { id: "s-social-2", image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=400", title: "Rooftop Social Mixer", date: "Feb 28, 2026", time: "7:30 PM", location: "Rooftop Lounge, San Francisco", participants: 80, category: "Social", isTrending: true },
-  { id: "s-fitness-1", image: "https://images.unsplash.com/photo-1644612105654-b6b0a941ecde?w=400", title: "Sunrise Yoga Session", date: "Feb 16, 2026", time: "6:30 AM", location: "Golden Gate Park", participants: 28, category: "Fitness" },
-  { id: "s-fitness-2", image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400", title: "5K Run for a Cause", date: "Mar 1, 2026", time: "8:00 AM", location: "Embarcadero, San Francisco", participants: 120, category: "Fitness", isTrending: true },
-  { id: "s-music-1", image: "https://images.unsplash.com/photo-1672841821756-fc04525771c2?w=400", title: "Indie Music Festival", date: "Feb 20, 2026", time: "5:00 PM", location: "The Fillmore, San Francisco", participants: 156, category: "Music", isTrending: true },
-  { id: "s-music-2", image: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400", title: "Jazz Night at the Harbor", date: "Feb 27, 2026", time: "8:00 PM", location: "Pier 39, San Francisco", participants: 75, category: "Music" },
-  { id: "s-outdoor-1", image: "https://images.unsplash.com/photo-1770564512491-e88eb93d48a3?w=400", title: "Weekend Hiking Adventure", date: "Feb 18, 2026", time: "8:00 AM", location: "Mount Tamalpais Trailhead", participants: 34, category: "Outdoor", isTrending: true },
-  { id: "s-outdoor-2", image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400", title: "Cycling Tour Through Marin", date: "Mar 7, 2026", time: "9:00 AM", location: "Marin County, California", participants: 22, category: "Outdoor" },
-  { id: "s-food-1", image: "https://images.unsplash.com/photo-1762994576926-b8268190a2c9?w=400", title: "Italian Cooking Workshop", date: "Feb 17, 2026", time: "6:00 PM", location: "Culinary Institute, Berkeley", participants: 20, category: "Food" },
-  { id: "s-food-2", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400", title: "Street Food Tour Mission District", date: "Feb 21, 2026", time: "1:00 PM", location: "Mission District, San Francisco", participants: 30, category: "Food", isTrending: true },
-  { id: "s-art-1", image: "https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=400", title: "Urban Sketching Walk", date: "Feb 19, 2026", time: "10:00 AM", location: "SOMA Arts District, San Francisco", participants: 18, category: "Art" },
-  { id: "s-art-2", image: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?w=400", title: "Open Studio Night", date: "Feb 26, 2026", time: "6:00 PM", location: "Dogpatch Studios, San Francisco", participants: 40, category: "Art" },
-  { id: "s-books-1", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400", title: "Sci-Fi Book Club Meetup", date: "Feb 23, 2026", time: "5:00 PM", location: "Green Apple Books, San Francisco", participants: 15, category: "Books" },
-  { id: "s-books-2", image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400", title: "Author Reading & Q&A Evening", date: "Mar 3, 2026", time: "7:00 PM", location: "City Lights Bookstore, San Francisco", participants: 50, category: "Books", isTrending: true },
-];
+function mapEventToCard(ev) {
+  const d = new Date(ev.dateTime);
+  return {
+    id: ev._id,
+    image:
+      ev.coverImage ||
+      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400",
+    title: ev.title,
+    date: d.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    time: d.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    location: ev.locationText,
+    participants: ev.participantsCount || ev.participants?.length || 0,
+    category: ev.categories?.[0] || "Evento",
+    isTrending: (ev.participantsCount || 0) >= 50,
+  };
+}
 
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const [filterLocationData, setFilterLocationData] = useState({
+    address: "",
+    lat: null,
+    lng: null,
+  });
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [filterMinParticipants, setFilterMinParticipants] = useState("");
+  const [appliedLocation, setAppliedLocation] = useState("");
+  const [appliedStartDate, setAppliedStartDate] = useState("");
+  const [appliedEndDate, setAppliedEndDate] = useState("");
+  const [appliedMinParticipants, setAppliedMinParticipants] = useState("");
+  const [locationPickerKey, setLocationPickerKey] = useState(0);
+  const [events, setEvents] = useState([]);
+  const [loadingResults, setLoadingResults] = useState(true);
+  const [resultsError, setResultsError] = useState("");
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
@@ -66,24 +99,89 @@ export default function CategoriesPage() {
 
   const clearAllCategories = () => setSelectedCategories(new Set());
 
-  const hasActiveFilters = selectedCategories.size > 0 || submittedQuery.length > 0;
+  const resetAllFilters = () => {
+    setSearchQuery("");
+    setSubmittedQuery("");
+    setSelectedCategories(new Set());
 
-  const filteredEvents = useMemo(() => {
-    let results = allEvents;
-    if (selectedCategories.size > 0) {
-      results = results.filter((e) => selectedCategories.has(e.category));
-    }
-    if (submittedQuery) {
-      const q = submittedQuery.toLowerCase();
-      results = results.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.location.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q)
-      );
-    }
-    return results;
-  }, [selectedCategories, submittedQuery]);
+    setFilterLocationData({
+      address: "",
+      lat: null,
+      lng: null,
+    });
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setFilterMinParticipants("");
+
+    setAppliedLocation("");
+    setAppliedStartDate("");
+    setAppliedEndDate("");
+    setAppliedMinParticipants("");
+
+    // Force remount so map picker returns to initial state as well.
+    setLocationPickerKey((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoadingResults(true);
+      setResultsError("");
+
+      try {
+        const params = new URLSearchParams();
+
+        if (submittedQuery) {
+          params.set("q", submittedQuery);
+        }
+
+        if (selectedCategories.size > 0) {
+          params.set("categories", Array.from(selectedCategories).join(","));
+        }
+
+        if (appliedLocation.trim()) {
+          params.set("location", appliedLocation.trim());
+        }
+
+        if (appliedStartDate) {
+          params.set("startDate", appliedStartDate);
+        }
+
+        if (appliedEndDate) {
+          params.set("endDate", appliedEndDate);
+        }
+
+        if (appliedMinParticipants) {
+          params.set("minParticipants", appliedMinParticipants);
+        }
+
+        params.set("limit", "60");
+
+        const response = await fetch(`/api/events/search?${params.toString()}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error || "No se pudieron cargar los eventos.");
+        }
+
+        setEvents(Array.isArray(data) ? data.map(mapEventToCard) : []);
+      } catch (error) {
+        setResultsError(error.message || "No se pudieron cargar los eventos.");
+        setEvents([]);
+      } finally {
+        setLoadingResults(false);
+      }
+    };
+
+    fetchEvents();
+  }, [submittedQuery, selectedCategories, appliedLocation, appliedStartDate, appliedEndDate, appliedMinParticipants]);
+
+  const hasActiveFilters =
+    selectedCategories.size > 0 ||
+    submittedQuery.length > 0 ||
+    appliedLocation.trim().length > 0 ||
+    filterStartDate.length > 0 ||
+    filterEndDate.length > 0 ||
+    filterMinParticipants.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,7 +225,15 @@ export default function CategoriesPage() {
                     <MapPin className="w-4 h-4 inline mr-1.5 text-secondary" aria-hidden="true" />
                     Ubicación
                   </Label>
-                  <Input id="filterLocation" placeholder="Ciudad o dirección..." className="h-12 rounded-xl" />
+                  <LocationPicker
+                    key={locationPickerKey}
+                    value={filterLocationData.address}
+                    lat={filterLocationData.lat}
+                    lng={filterLocationData.lng}
+                    onChange={({ address, lat, lng }) => {
+                      setFilterLocationData({ address, lat, lng });
+                    }}
+                  />
                 </div>
                 <div>
                   <Label className="mb-3 block">
@@ -135,8 +241,18 @@ export default function CategoriesPage() {
                     Rango de fechas
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
-                    <Input type="date" className="h-12 rounded-xl" />
-                    <Input type="date" className="h-12 rounded-xl" />
+                    <Input
+                      type="date"
+                      className="h-12 rounded-xl"
+                      value={filterStartDate}
+                      onChange={(e) => setFilterStartDate(e.target.value)}
+                    />
+                    <Input
+                      type="date"
+                      className="h-12 rounded-xl"
+                      value={filterEndDate}
+                      onChange={(e) => setFilterEndDate(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div>
@@ -144,7 +260,15 @@ export default function CategoriesPage() {
                     <Users className="w-4 h-4 inline mr-1.5 text-accent" aria-hidden="true" />
                     Mínimo de participantes
                   </Label>
-                  <Input id="filterParticipants" type="number" placeholder="p.ej., 10" className="h-12 rounded-xl" />
+                  <Input
+                    id="filterParticipants"
+                    type="number"
+                    placeholder="p.ej., 10"
+                    className="h-12 rounded-xl"
+                    value={filterMinParticipants}
+                    onChange={(e) => setFilterMinParticipants(e.target.value)}
+                    min="0"
+                  />
                 </div>
                 <div>
                   <Label className="mb-3 block">Categorías</Label>
@@ -152,6 +276,7 @@ export default function CategoriesPage() {
                     {categoriesList.map((cat) => (
                       <button
                         key={cat.name}
+                        type="button"
                         onClick={() => toggleCategory(cat.name)}
                         className={`cursor-pointer px-4 py-2 rounded-full transition-all text-xs font-semibold border ${
                           selectedCategories.has(cat.name)
@@ -165,7 +290,28 @@ export default function CategoriesPage() {
                     ))}
                   </div>
                 </div>
-                <Button className="w-full h-12 rounded-xl">Aplicar filtros</Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    className="h-12 rounded-xl"
+                    onClick={() => {
+                      setAppliedLocation(filterLocationData.address);
+                      setAppliedStartDate(filterStartDate);
+                      setAppliedEndDate(filterEndDate);
+                      setAppliedMinParticipants(filterMinParticipants);
+                    }}
+                  >
+                    Aplicar filtros
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 rounded-xl"
+                    onClick={resetAllFilters}
+                  >
+                    Reiniciar filtros
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -215,23 +361,24 @@ export default function CategoriesPage() {
 
       {/* Results or Empty State */}
       <section className="w-full mx-auto px-6 md:px-8 lg:px-12 py-8 max-w-[1440px]">
-        {!hasActiveFilters ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center">
-              <SearchIcon className="w-10 h-10 text-secondary" />
-            </div>
-            <h3 className="font-semibold text-xl mb-3">Descubre Eventos Increíbles</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
-              Busca eventos por nombre, explora por categoría o usa filtros para encontrar el meetup perfecto
-            </p>
+        {loadingResults ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : resultsError ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {resultsError}
           </div>
         ) : (
           <div>
             {/* Results header */}
             <div className="flex flex-wrap items-center gap-3 mb-6">
               <h3 className="font-semibold text-lg">
-                {filteredEvents.length} {filteredEvents.length === 1 ? "Evento encontrado" : "Eventos encontrados"}
+                {events.length} {events.length === 1 ? "Evento encontrado" : "Eventos encontrados"}
               </h3>
+              {!hasActiveFilters && (
+                <span className="text-sm text-muted-foreground">Mostrando resultados recientes</span>
+              )}
               {/* Active category pills */}
               {selectedCategories.size > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -257,19 +404,19 @@ export default function CategoriesPage() {
               )}
             </div>
 
-            {filteredEvents.length === 0 ? (
+            {events.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                   <SearchIcon className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Sin resultados</h3>
                 <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                  No encontramos eventos con los filtros seleccionados. Prueba con otras categorías.
+                  No encontramos eventos con los filtros seleccionados. Prueba con otros términos o ajusta las fechas.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8">
-                {filteredEvents.map((event) => (
+                {events.map((event) => (
                   <EventCard key={event.id} {...event} />
                 ))}
               </div>
