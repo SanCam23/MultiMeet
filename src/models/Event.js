@@ -1,4 +1,34 @@
 import mongoose from "mongoose";
+import { deleteDropboxFileBySharedUrl } from "@/lib/dropbox";
+
+async function cleanupEventDropboxMedia(eventDoc) {
+  if (!eventDoc) {
+    return;
+  }
+
+  const mediaUrls = [
+    eventDoc.coverImage,
+    ...(Array.isArray(eventDoc.userGallery)
+      ? eventDoc.userGallery.map((item) => item?.url).filter(Boolean)
+      : []),
+  ].filter(Boolean);
+
+  if (mediaUrls.length === 0) {
+    return;
+  }
+
+  const results = await Promise.allSettled(
+    mediaUrls.map((url) => deleteDropboxFileBySharedUrl(url))
+  );
+
+  const cleanupErrors = results
+    .filter((result) => result.status === "rejected")
+    .map((result) => result.reason?.message || "Error desconocido limpiando media de Dropbox");
+
+  if (cleanupErrors.length > 0) {
+    console.error("Event media cleanup errors:", cleanupErrors);
+  }
+}
 
 const EventSchema = new mongoose.Schema(
   {
@@ -97,5 +127,21 @@ EventSchema.index({ categories: 1 });
 EventSchema.index({ dateTime: 1 });
 EventSchema.index({ locationText: 1 });
 EventSchema.index({ title: "text", description: "text", locationText: "text" });
+
+EventSchema.post("findOneAndDelete", async function (doc) {
+  await cleanupEventDropboxMedia(doc);
+});
+
+EventSchema.pre("deleteOne", { query: true, document: false }, async function () {
+  this._eventToCleanup = await this.model.findOne(this.getFilter());
+});
+
+EventSchema.post("deleteOne", { query: true, document: false }, async function () {
+  await cleanupEventDropboxMedia(this._eventToCleanup);
+});
+
+EventSchema.post("deleteOne", { query: false, document: true }, async function () {
+  await cleanupEventDropboxMedia(this);
+});
 
 export default mongoose.models.Event || mongoose.model("Event", EventSchema);

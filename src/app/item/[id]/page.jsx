@@ -21,6 +21,9 @@ export default function ItemDetailPage() {
   const [showSharePopup, setShowSharePopup] = useState(false);
   const [rating, setRating] = useState(0);
   const [activeTab, setActiveTab] = useState("gallery");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
@@ -185,6 +188,29 @@ export default function ItemDetailPage() {
     }
   };
 
+  const handleDeleteEvent = async () => {
+    try {
+      setDeletingEvent(true);
+      setDeleteError("");
+
+      const res = await fetch(`/api/events/${urlId}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo eliminar el evento");
+      }
+
+      setShowDeleteModal(false);
+      router.push("/dashboard");
+    } catch (error) {
+      setDeleteError(error.message || "No se pudo eliminar el evento");
+    } finally {
+      setDeletingEvent(false);
+    }
+  };
+
   const getEventDateText = () => {
     if (event.dateTime) {
       const d = new Date(event.dateTime);
@@ -317,14 +343,30 @@ export default function ItemDetailPage() {
 
         {/* CTA Section */}
         {!isFinished ? (
-          <Button 
-            onClick={handleJoinOrFinish} 
-            variant={isAuthor ? 'destructive' : userJoined ? 'outline' : 'default'}
-            className="w-full md:max-w-md md:mx-auto md:block h-14 text-base rounded-xl shadow-lg mb-8" 
-            size="lg"
-          >
-            {isAuthor ? "Finalizar evento" : userJoined ? "Desapuntarse" : "Unirse al evento"}
-          </Button>
+          <div className="space-y-3 mb-8 md:max-w-md md:mx-auto">
+            <Button
+              onClick={handleJoinOrFinish}
+              variant={isAuthor ? "destructive" : userJoined ? "outline" : "default"}
+              className="w-full h-14 text-base rounded-xl shadow-lg"
+              size="lg"
+            >
+              {isAuthor ? "Finalizar evento" : userJoined ? "Desapuntarse" : "Unirse al evento"}
+            </Button>
+            {isAuthor && (
+              <Button
+                onClick={() => {
+                  setDeleteError("");
+                  setShowDeleteModal(true);
+                }}
+                variant="outline"
+                className="w-full h-14 test-base rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10"
+                size="lg"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar evento
+              </Button>
+            )}
+          </div>
         ) : (
           <>
             {/* Rating Section */}
@@ -341,6 +383,23 @@ export default function ItemDetailPage() {
                 </Button>
               </div>
             </div>
+
+            {isAuthor && (
+              <div className="mb-8 md:max-w-md md:mx-auto">
+                <Button
+                  onClick={() => {
+                    setDeleteError("");
+                    setShowDeleteModal(true);
+                  }}
+                  variant="outline"
+                  className="w-full h-14 test-base rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10"
+                  size="lg"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar evento
+                </Button>
+              </div>
+            )}
           </>
         )}
 
@@ -402,6 +461,58 @@ export default function ItemDetailPage() {
           </div>
         )}
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => !deletingEvent && setShowDeleteModal(false)}
+            aria-hidden="true"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-event-title"
+            className="relative w-full max-w-md bg-card border border-border shadow-2xl rounded-3xl overflow-hidden"
+          >
+            <div className="px-6 py-5 border-b border-border">
+              <h3 id="delete-event-title" className="text-xl font-bold">Eliminar evento</h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                ¿Está seguro de que desea eliminar este evento? Esta acción no se puede deshacer.
+              </p>
+            </div>
+
+            <div className="px-6 py-4">
+              {deleteError && (
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {deleteError}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-border bg-muted/20 flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deletingEvent}
+                className="rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDeleteEvent}
+                disabled={deletingEvent}
+                className="rounded-xl"
+              >
+                {deletingEvent ? "Eliminando..." : "Sí, eliminar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
