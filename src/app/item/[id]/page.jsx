@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video } from "lucide-react";
+import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -223,8 +224,14 @@ export default function ItemDetailPage() {
     <div className="min-h-screen bg-background pb-20">
       {/* Hero Header */}
       <div className="relative h-72 md:h-96 w-full">
-        <img src={event.coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1080"}
-          alt="" className="w-full h-full object-cover bg-muted" />
+        <Image
+          src={event.coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1080"}
+          alt={event.title || "Evento"}
+          fill
+          sizes="100vw"
+          className="object-cover bg-muted"
+          priority
+        />
 
         <button
           onClick={() => router.back()}
@@ -440,8 +447,14 @@ export default function ItemDetailPage() {
 
                   return (
                     <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
-                      <div className="relative">
-                        <img src={url} alt={`Subido por ${item.user?.username}`} className="w-full h-auto object-cover" />
+                      <div className="relative aspect-video">
+                        <Image
+                          src={url}
+                          alt={`Subido por ${item.user?.username}`}
+                          fill
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                          className="object-cover"
+                        />
                       </div>
                       <div className="p-4">
                         <div className="flex items-center justify-between">
