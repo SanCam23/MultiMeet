@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -291,6 +291,29 @@ export default function ItemDetailPage() {
           </div>
         </div>
 
+        {/* Parent Event Linking */}
+        {event.parentEvent && (
+          <Link href={`/item/${event.parentEvent._id}`}>
+            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-8 relative overflow-hidden group transition-all hover:bg-primary/10 flex items-center gap-4 shadow-sm">
+               {event.parentEvent.coverImage ? (
+                 <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-background">
+                    <img src={event.parentEvent.coverImage} className="w-full h-full object-cover" alt="" />
+                 </div>
+               ) : (
+                 <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-8 h-8 text-primary/50" />
+                 </div>
+               )}
+               <div className="flex-1">
+                 <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Viene del meetup</p>
+                 <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{event.parentEvent.title}</p>
+                 <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">Ver evento original</p>
+               </div>
+               <ArrowRight className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+            </div>
+          </Link>
+        )}
+
         {/* Author Card */}
         {event.author && (
           <div className="flex items-center gap-3 bg-card rounded-2xl px-5 py-4 mb-8 border border-border shadow-sm">
@@ -376,6 +399,40 @@ export default function ItemDetailPage() {
           <h3 className="font-semibold text-lg mb-3">Sobre este evento</h3>
           <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{event.description}</p>
         </div>
+
+        {/* Extensions Linking */}
+        {event.extensions && event.extensions.length > 0 && (
+          <div className="mb-8 bg-card rounded-2xl p-6 border border-border shadow-sm">
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+               <Calendar className="w-5 h-5 text-accent" />
+               Próximas ediciones
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+               Se han creado nuevas aportaciones basadas en este meetup original.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {event.extensions.map(ext => (
+                <Link href={`/item/${ext._id}`} key={ext._id}>
+                  <div className="bg-background border border-border rounded-xl p-3 flex gap-3 items-center hover:border-primary/50 transition-colors group shadow-sm">
+                    {ext.coverImage ? (
+                      <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={ext.coverImage} className="w-full h-full object-cover" alt="" />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-6 h-6 text-accent/50" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                       <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{ext.title}</p>
+                       <p className="text-xs text-muted-foreground capitalize">{new Date(ext.dateTime).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* CTA Section */}
         {!isFinished ? (
@@ -570,7 +627,7 @@ export default function ItemDetailPage() {
           >
             <div className="px-6 py-5 border-b border-border flex justify-between items-center">
               <h3 className="text-xl font-bold">Participantes ({event.participants?.length || 0})</h3>
-              <button 
+              <button
                 onClick={() => setShowParticipantsModal(false)}
                 className="p-2 hover:bg-muted rounded-full transition-colors"
               >
@@ -584,7 +641,7 @@ export default function ItemDetailPage() {
                   <div key={p._id || p.clerkId} className="flex items-center gap-3 p-2 hover:bg-muted/40 rounded-xl transition-colors">
                     <Link href={`/user/${p.slug}`}>
                       <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold cursor-pointer">
-                         {p.name ? p.name.substring(0, 2).toUpperCase() : p.username?.substring(0, 2).toUpperCase()}
+                        {p.name ? p.name.substring(0, 2).toUpperCase() : p.username?.substring(0, 2).toUpperCase()}
                       </div>
                     </Link>
                     <div className="flex-1 min-w-0">

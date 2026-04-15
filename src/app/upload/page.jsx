@@ -50,6 +50,20 @@ export default function UploadPage() {
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
+  const [parentEventId, setParentEventId] = useState("");
+  const [myEvents, setMyEvents] = useState([]);
+
+  useEffect(() => {
+    if (formType === "extend" && myEvents.length === 0) {
+      fetch("/api/events/my")
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) setMyEvents(data);
+        })
+        .catch(console.error);
+    }
+  }, [formType, myEvents.length]);
+
   useEffect(() => {
     return () => {
       if (coverImagePreview) {
@@ -122,12 +136,19 @@ export default function UploadPage() {
     setSubmitError("");
     setSubmitSuccess("");
 
-    if (selectedCategories.length === 0) {
+    const isExtend = formType === "extend";
+
+    if (isExtend && !parentEventId) {
+      setSubmitError("Selecciona un evento original para ampliar.");
+      return;
+    }
+
+    if (!isExtend && selectedCategories.length === 0) {
       setSubmitError("Selecciona al menos una categoría.");
       return;
     }
 
-    if (!locationData.address.trim()) {
+    if (!isExtend && !locationData.address.trim()) {
       setSubmitError("Selecciona una ubicación.");
       return;
     }
@@ -148,7 +169,7 @@ export default function UploadPage() {
 
       let coverImageUrl = "";
 
-      if (coverImageFile) {
+      if (!isExtend && coverImageFile) {
         const imageFormData = new FormData();
         imageFormData.append("file", coverImageFile);
 
@@ -170,13 +191,18 @@ export default function UploadPage() {
         title,
         description,
         dateTime: dateTime.toISOString(),
-        locationText: locationData.address,
-        lat: locationData.lat,
-        lng: locationData.lng,
-        categories: selectedCategories,
-        coverImage: coverImageUrl,
-        maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
       };
+
+      if (!isExtend) {
+        payload.locationText = locationData.address;
+        payload.lat = locationData.lat;
+        payload.lng = locationData.lng;
+        payload.categories = selectedCategories;
+        payload.coverImage = coverImageUrl;
+        payload.maxParticipants = maxParticipants ? Number(maxParticipants) : undefined;
+      } else {
+        payload.parentEventId = parentEventId;
+      }
 
       const response = await fetch("/api/events", {
         method: "POST",
@@ -452,18 +478,34 @@ export default function UploadPage() {
             </form>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-8">
+              {(submitError || submitSuccess) && (
+                <div
+                  className={`rounded-xl border px-4 py-3 text-sm ${
+                    submitError
+                      ? "border-destructive/30 bg-destructive/10 text-destructive"
+                      : "border-green-600/30 bg-green-600/10 text-green-700"
+                  }`}
+                >
+                  {submitError || submitSuccess}
+                </div>
+              )}
+
               {/* Parent Event Selection */}
               <div>
                 <Label htmlFor="parentEvent" className="mb-3 block">Ampliar desde evento</Label>
                 <select
                   id="parentEvent"
                   className="w-full h-12 px-4 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground"
+                  value={parentEventId}
+                  onChange={(e) => setParentEventId(e.target.value)}
                   required
                 >
                   <option value="">Selecciona un evento...</option>
-                  <option value="1">Tech Networking Night</option>
-                  <option value="2">Coffee & Conversation</option>
-                  <option value="3">Sunrise Yoga Session</option>
+                  {myEvents.map((ev) => (
+                    <option key={ev._id} value={ev._id}>
+                      {ev.title} ({new Date(ev.dateTime).toLocaleDateString()})
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -474,6 +516,8 @@ export default function UploadPage() {
                   id="extensionTitle"
                   placeholder="¿Qué añades a este evento?"
                   className="h-12 rounded-xl"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   required
                 />
               </div>
@@ -484,6 +528,8 @@ export default function UploadPage() {
                   id="extensionDetails"
                   placeholder="Describe tu contribución..."
                   className="min-h-32 rounded-xl"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   required
                 />
               </div>
@@ -492,16 +538,16 @@ export default function UploadPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="extDate" className="mb-3 block">Fecha</Label>
-                  <Input id="extDate" type="date" className="h-12 rounded-xl" required />
+                  <Input id="extDate" type="date" className="h-12 rounded-xl" value={date} onChange={(e) => setDate(e.target.value)} required />
                 </div>
                 <div>
                   <Label htmlFor="extTime" className="mb-3 block">Hora</Label>
-                  <Input id="extTime" type="time" className="h-12 rounded-xl" required />
+                  <Input id="extTime" type="time" className="h-12 rounded-xl" value={time} onChange={(e) => setTime(e.target.value)} required />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-14 text-base rounded-xl shadow-lg" size="lg">
-                Publicar ampliación
+              <Button type="submit" disabled={isSubmitting} className="w-full h-14 text-base rounded-xl shadow-lg" size="lg">
+                {isSubmitting ? "Publicando..." : "Publicar ampliación"}
               </Button>
             </form>
           )}

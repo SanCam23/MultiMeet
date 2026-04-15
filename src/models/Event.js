@@ -119,6 +119,11 @@ const EventSchema = new mongoose.Schema(
       required: [true, "El autor del evento es obligatorio"],
       index: true,
     },
+    parentEvent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
   },
   { timestamps: true }
 );

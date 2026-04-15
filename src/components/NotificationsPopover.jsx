@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bell, UserPlus, Calendar, MapPin, Star, MessageCircle } from "lucide-react";
+import { Bell, UserPlus, Calendar, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 

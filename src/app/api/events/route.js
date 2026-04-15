@@ -68,14 +68,13 @@ export async function POST(request) {
       categories,
       coverImage,
       maxParticipants,
+      parentEventId,
     } = body;
 
-    // Validación de campos obligatorios
-    if (!title || !description || !dateTime || !locationText) {
+    // Validación básica de título, descripción y fecha
+    if (!title || !description || !dateTime) {
       return NextResponse.json(
-        {
-          error: "Los campos title, description, dateTime y locationText son obligatorios",
-        },
+        { error: "Los campos title, description y dateTime son obligatorios" },
         { status: 400 }
       );
     }
@@ -97,16 +96,48 @@ export async function POST(request) {
       );
     }
 
-    // Validación de categorías
-    if (!Array.isArray(categories) || categories.length === 0) {
+    // 3. Conectar a MongoDB y procesar herencia / validación extra
+    await connectToDatabase();
+
+    let parentEvent = null;
+    if (parentEventId) {
+      parentEvent = await Event.findById(parentEventId);
+      if (!parentEvent) {
+        return NextResponse.json(
+          { error: "El evento original que se intenta ampliar no existe" },
+          { status: 404 }
+        );
+      }
+      
+      // La ampliación debe ser POSTERIOR al evento padre
+      if (eventDate <= new Date(parentEvent.dateTime)) {
+        return NextResponse.json(
+          { error: "La fecha y hora de la ampliación debe ser obligatoriamente posterior al evento original." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Herencia de campos (si no se proveen, se rellenan con los del padre)
+    const finalLocationText = locationText || parentEvent?.locationText;
+    const finalLat = lat !== undefined && lat !== null ? lat : parentEvent?.lat;
+    const finalLng = lng !== undefined && lng !== null ? lng : parentEvent?.lng;
+    const finalCategories = (categories && categories.length > 0) ? categories : parentEvent?.categories || [];
+    const finalCoverImage = coverImage || parentEvent?.coverImage || "";
+
+    if (!finalLocationText) {
+      return NextResponse.json(
+        { error: "La ubicación del evento es obligatoria" },
+        { status: 400 }
+      );
+    }
+
+    if (!finalCategories || finalCategories.length === 0) {
       return NextResponse.json(
         { error: "Debe haber al menos una categoría" },
         { status: 400 }
       );
     }
-
-    // 3. Conectar a MongoDB y obtener usuario
-    await connectToDatabase();
 
     const user = await User.findOne({ clerkId });
 
@@ -117,22 +148,22 @@ export async function POST(request) {
       );
     }
 
-    // 4. Crear el evento
+    // 4. Crear el evento con la referencia parentEvent
     const newEvent = await Event.create({
       title: title.trim(),
       description: description.trim(),
       dateTime: eventDate,
-      locationText: locationText.trim(),
-      lat: lat ? parseFloat(lat) : null,
-      lng: lng ? parseFloat(lng) : null,
-      categories: Array.isArray(categories)
-        ? categories.map((c) => c.trim())
-        : [],
-      coverImage: coverImage ? coverImage.trim() : "",
+      locationText: finalLocationText.trim(),
+      lat: finalLat ? parseFloat(finalLat) : null,
+      lng: finalLng ? parseFloat(finalLng) : null,
+      categories: finalCategories.map((c) => c.trim()),
+      coverImage: finalCoverImage.trim(),
       maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
       author: user._id,
+      parentEvent: parentEvent ? parentEvent._id : null,
       status: "active",
       participantsCount: 1, // El autor cuenta como participante
+      participants: [user._id],
     });
 
     // 5. Popular autor y devolver evento creado

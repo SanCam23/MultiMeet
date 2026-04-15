@@ -15,7 +15,8 @@ export async function GET(request, { params }) {
       .populate("author", "name username avatar slug clerkId")
       .populate("participants", "name username avatar slug clerkId")
       .populate("userGallery.user", "name username avatar slug clerkId")
-      .populate("ratings.user", "name username avatar slug clerkId");
+      .populate("ratings.user", "name username avatar slug clerkId")
+      .populate("parentEvent", "title coverImage dateTime status");
 
     if (!event) {
       return NextResponse.json(
@@ -24,7 +25,15 @@ export async function GET(request, { params }) {
       );
     }
 
-    return NextResponse.json(event, { status: 200 });
+    // Buscar ampliaciones de este evento
+    const extensions = await Event.find({ parentEvent: id, status: { $ne: "cancelled" } })
+      .select("title coverImage dateTime")
+      .sort({ dateTime: 1 });
+
+    const eventObj = event.toObject();
+    eventObj.extensions = extensions;
+
+    return NextResponse.json(eventObj, { status: 200 });
   } catch (error) {
     console.error("GET /api/events/[id] error:", error);
     return NextResponse.json(
