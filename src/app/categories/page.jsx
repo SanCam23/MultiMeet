@@ -8,6 +8,7 @@ import { EventCard } from "@/components/EventCard";
 import { Label } from "@/components/ui/Label";
 import { useTheme } from "@/context/ThemeContext";
 import dynamic from "next/dynamic";
+import { SignInButton, useAuth } from "@clerk/nextjs";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
@@ -57,6 +58,7 @@ function mapEventToCard(ev) {
 }
 
 export default function CategoriesPage() {
+  const { isSignedIn } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState(new Set());
@@ -123,6 +125,13 @@ export default function CategoriesPage() {
   };
 
   useEffect(() => {
+    if (!isSignedIn) {
+      setLoadingResults(false);
+      setResultsError("");
+      setEvents([]);
+      return;
+    }
+
     const fetchEvents = async () => {
       setLoadingResults(true);
       setResultsError("");
@@ -173,7 +182,7 @@ export default function CategoriesPage() {
     };
 
     fetchEvents();
-  }, [submittedQuery, selectedCategories, appliedLocation, appliedStartDate, appliedEndDate, appliedMinParticipants]);
+  }, [isSignedIn, submittedQuery, selectedCategories, appliedLocation, appliedStartDate, appliedEndDate, appliedMinParticipants]);
 
   const hasActiveFilters =
     selectedCategories.size > 0 ||
@@ -182,6 +191,25 @@ export default function CategoriesPage() {
     filterStartDate.length > 0 ||
     filterEndDate.length > 0 ||
     filterMinParticipants.length > 0;
+
+  if (!isSignedIn) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center py-20 px-6 text-center">
+        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <SearchIcon className="w-10 h-10 text-primary" />
+        </div>
+        <h2 className="text-2xl font-bold mb-4">¡Únete a la comunidad!</h2>
+        <p className="text-muted-foreground mb-8 max-w-sm">
+          Inicia sesión para poder buscar nuevas experiencias.
+        </p>
+        <SignInButton mode="modal">
+          <Button size="lg" className="rounded-xl px-8 h-14 text-base shadow-lg">
+            Iniciar Sesión ahora
+          </Button>
+        </SignInButton>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
