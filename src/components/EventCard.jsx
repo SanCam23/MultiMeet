@@ -8,24 +8,45 @@ import { useTheme } from "@/context/ThemeContext";
 export function EventCard({
   id,
   image,
+  coverImage,
   title,
   date,
   time,
+  dateTime,
   location,
+  locationText,
   participants,
+  participantsCount,
   category,
+  categories,
   isTrending = false,
 }) {
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
+
+  // Handle both mock and real DB data
+  const displayImage = coverImage || image;
+  const displayTitle = title;
+  const displayLocation = locationText || location;
+  const displayParticipants = participantsCount !== undefined ? participantsCount : (participants || 0);
+  const displayCategory = categories?.[0] || category;
+
+  let displayDate = date;
+  let displayTime = time;
+
+  if (dateTime) {
+    const d = new Date(dateTime);
+    displayDate = d.toLocaleDateString();
+    displayTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
 
   return (
     <Link href={`/item/${id}`} className="block focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
       <article className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-border">
         <div className="relative h-48">
           <img
-            src={image}
-            alt={title}
+            src={displayImage}
+            alt={displayTitle}
             className="w-full h-full object-cover"
             loading="lazy"
           />
@@ -39,26 +60,26 @@ export function EventCard({
           )}
           <div className="absolute bottom-4 left-4">
             <Badge className="bg-accent text-accent-foreground backdrop-blur-sm px-3 py-1.5">
-              {category}
+              {displayCategory}
             </Badge>
           </div>
         </div>
         <div className="p-6">
-          <h3 className="font-semibold text-lg mb-4 line-clamp-2">{title}</h3>
+          <h3 className="font-semibold text-lg mb-4 line-clamp-2">{displayTitle}</h3>
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-primary" aria-hidden="true" />
               <span>
-                {date} a las {time}
+                {displayDate} a las {displayTime}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <MapPin className={`w-5 h-5 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
-              <span className="line-clamp-1">{location}</span>
+              <span className="line-clamp-1">{displayLocation}</span>
             </div>
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-accent" aria-hidden="true" />
-              <span>{participants.toLocaleString()} asistentes</span>
+              <span>{displayParticipants.toLocaleString()} asistentes</span>
             </div>
           </div>
         </div>

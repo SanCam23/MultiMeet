@@ -31,7 +31,7 @@ export default function ItemDetailPage() {
   const [loading, setLoading] = useState(true);
   const [userJoined, setUserJoined] = useState(false);
   const [isAuthor, setIsAuthor] = useState(false);
-  
+
   const fileInputRef = useRef(null);
 
   const urlId = params?.id;
@@ -48,7 +48,7 @@ export default function ItemDetailPage() {
         if (userId) {
           setIsAuthor(data.author?.clerkId === userId);
           setUserJoined(data.participants?.some(p => p.clerkId === userId) || false);
-          
+
           const myRating = data.ratings?.find(r => r.user?.clerkId === userId);
           if (myRating) setRating(myRating.value);
         }
@@ -82,7 +82,7 @@ export default function ItemDetailPage() {
 
   const isFinished = event.status === "finished";
   const hasGallery = event.userGallery && event.userGallery.length > 0;
-  
+
   const handleShare = () => {
     setShowSharePopup(true);
     setTimeout(() => setShowSharePopup(false), 2500);
@@ -93,7 +93,7 @@ export default function ItemDetailPage() {
       openSignIn();
       return;
     }
-    
+
     if (isAuthor && !isFinished) {
       if (!confirm("¿Seguro que deseas finalizar el evento?")) return;
       try {
@@ -132,21 +132,21 @@ export default function ItemDetailPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      
+
       const uploadRes = await fetch("/api/uploads/dropbox", {
         method: "POST",
         body: formData
       });
-      
+
       if (!uploadRes.ok) throw new Error("Error al subir archivo");
       const { url } = await uploadRes.json();
-      
+
       const galleryRes = await fetch(`/api/events/${urlId}/gallery`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, type: file.type.startsWith("video/") ? "video" : "image" })
       });
-      
+
       if (galleryRes.ok) {
         const data = await galleryRes.json();
         setEvent({ ...event, userGallery: data.userGallery });
@@ -223,8 +223,8 @@ export default function ItemDetailPage() {
     <div className="min-h-screen bg-background pb-20">
       {/* Hero Header */}
       <div className="relative h-72 md:h-96 w-full">
-        <img src={event.coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1080"} 
-             alt="" className="w-full h-full object-cover bg-muted" />
+        <img src={event.coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1080"}
+          alt="" className="w-full h-full object-cover bg-muted" />
 
         <button
           onClick={() => router.back()}
@@ -329,7 +329,7 @@ export default function ItemDetailPage() {
             <div className="text-left">
               <p className="font-semibold">Participantes</p>
               <p className="text-sm text-muted-foreground">
-                {event.participantsCount || 0} personas apuntadas
+                {event.participantsCount || 0} {event.maxParticipants ? `de ${event.maxParticipants}` : ""} personas apuntadas
               </p>
             </div>
           </button>
@@ -415,7 +415,7 @@ export default function ItemDetailPage() {
 
             {isFinished && (
               <div className="mb-6">
-                <input 
+                <input
                   type="file"
                   accept="image/*"
                   ref={fileInputRef}
@@ -437,7 +437,7 @@ export default function ItemDetailPage() {
               <Masonry columnsCount={2} gutter="16px">
                 {event.userGallery.map((item, index) => {
                   const url = item.url;
-                  
+
                   return (
                     <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
                       <div className="relative">

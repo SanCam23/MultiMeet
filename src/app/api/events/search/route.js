@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongoose";
 import Event from "@/models/Event";
+import User from "@/models/User"; // Add user to avoid MissingSchemaError
 
 /**
  * GET /api/events/search

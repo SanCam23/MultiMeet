@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EventCard } from "@/components/EventCard";
-import { mockEvents } from "@/data/events";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@clerk/nextjs";
 
 const tabs = [
   { value: "following", label: "Siguiendo" },
@@ -12,33 +12,108 @@ const tabs = [
 ];
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState("following");
+  const { isSignedIn, isLoaded: authLoaded } = useAuth();
+  const [activeTab, setActiveTab] = useState("topGlobal");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [radius, setRadius] = useState(5); // Default 5km
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
+
+  async function fetchEvents(tab, r) {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({ tab });
+      if (tab === "topInCity") {
+        params.append("radius", r);
+      }
+      const res = await fetch(`/api/events/home?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data);
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Wait for auth to be resolved before setting the tab and fetching
+  useEffect(() => {
+    if (!authLoaded) return;
+    const defaultTab = isSignedIn ? "following" : "topGlobal";
+    setActiveTab(defaultTab);
+    fetchEvents(defaultTab, radius);
+  }, [authLoaded, isSignedIn]);
+
+  // Re-fetch when the user manually changes tabs
+  useEffect(() => {
+    if (!authLoaded) return;
+    fetchEvents(activeTab, radius);
+  }, [activeTab]);
+
+  const handleRadiusChange = (e) => {
+    const newRadius = parseInt(e.target.value);
+    setRadius(newRadius);
+    if (activeTab === "topInCity") {
+      fetchEvents(activeTab, newRadius);
+    }
+  };
 
   return (
     <section aria-label="Eventos">
       <div className="w-full mx-auto px-6 md:px-8 lg:px-12 pt-6 pb-8 max-w-[1440px]">
         {/* Tabs */}
-        <div className="max-w-2xl mx-auto mb-8" role="tablist" aria-label="Categorías de eventos">
-          <div className="grid w-full grid-cols-3 h-12 bg-card rounded-xl p-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.value}
-                role="tab"
-                aria-selected={activeTab === tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={`rounded-lg text-sm md:text-base font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring ${
-                  activeTab === tab.value
+        <div className="max-w-2xl mx-auto mb-4" role="tablist" aria-label="Categorías de eventos">
+          {isSignedIn ? (
+            <div className="grid w-full grid-cols-3 h-12 bg-card rounded-xl p-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  role="tab"
+                  aria-selected={activeTab === tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`rounded-lg text-sm md:text-base font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === tab.value
                     ? `bg-primary ${isHighContrast ? "text-black" : "text-primary-foreground"} shadow-sm`
                     : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="h-12 bg-card rounded-xl p-1 w-full max-w-[200px]">
+                <button
+                  role="tab"
+                  aria-selected={true}
+                  className={`w-full h-full rounded-lg text-sm md:text-base font-medium transition-colors focus:outline-none bg-primary ${isHighContrast ? "text-black" : "text-primary-foreground"} shadow-sm`}
+                >
+                  Top Global
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {activeTab === "topInCity" && (
+          <div className="max-w-xs mx-auto mb-8 flex flex-col items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              Radio de búsqueda: {radius} km
+            </span>
+            <input
+              type="range"
+              min="5"
+              max="50"
+              step="5"
+              value={radius}
+              onChange={handleRadiusChange}
+              className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+          </div>
+        )}
 
         {/* Event Grid */}
         <div
@@ -46,9 +121,21 @@ export default function HomePage() {
           aria-label={tabs.find((t) => t.value === activeTab)?.label}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8"
         >
-          {mockEvents[activeTab].map((event) => (
-            <EventCard key={event.id} {...event} />
-          ))}
+          {loading ? (
+            <div className="col-span-full text-center py-10">Cargando eventos...</div>
+          ) : events.length > 0 ? (
+            events.map((event) => (
+              <EventCard key={event._id} {...event} id={event._id} />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-10 text-muted-foreground">
+              {activeTab === "following"
+                ? "No sigues a nadie o no hay eventos recientes de quienes sigues."
+                : activeTab === "topInCity"
+                  ? "No se han encontrado eventos en tu zona."
+                  : "No se han encontrado eventos."}
+            </div>
+          )}
         </div>
       </div>
     </section>
