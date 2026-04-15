@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,16 @@ import { StarRating } from "@/components/StarRating";
 import { useTheme } from "@/context/ThemeContext";
 import { FollowButton } from "@/components/FollowButton";
 import { useAuth, useClerk } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
+
+const MapViewer = dynamic(() => import("@/components/MapViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center animate-pulse">
+      <MapPin className="w-12 h-12 text-secondary/40" />
+    </div>
+  ),
+});
 
 export default function ItemDetailPage() {
   const { userId } = useAuth();
@@ -23,6 +33,7 @@ export default function ItemDetailPage() {
   const [rating, setRating] = useState(0);
   const [activeTab, setActiveTab] = useState("gallery");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const { theme } = useTheme();
@@ -322,14 +333,32 @@ export default function ItemDetailPage() {
             </div>
           </div>
 
-          <div className="h-40 md:h-48 bg-muted rounded-xl overflow-hidden">
-            <div className="w-full h-full bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center">
-              <MapPin className={`w-12 h-12 ${isHighContrast ? "text-yellow-300/40" : "text-secondary/40"}`} />
-            </div>
+          <div className="h-40 md:h-48 bg-muted rounded-xl overflow-hidden relative group">
+            {event.lat && event.lng ? (
+              <>
+                <MapViewer lat={event.lat} lng={event.lng} />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${event.lat},${event.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute inset-0 z-10 flex items-center justify-center bg-black/0 focus-within:bg-black/20 hover:bg-black/20 transition-all cursor-pointer"
+                  title="Abrir en Google Maps"
+                >
+                  <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 bg-background/95 backdrop-blur-sm text-foreground px-4 py-2 rounded-full font-medium text-sm shadow-xl transition-all flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 group-focus-within:translate-y-0">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Abrir en Google Maps
+                  </div>
+                </a>
+              </>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center">
+                <MapPin className={`w-12 h-12 ${isHighContrast ? "text-yellow-300/40" : "text-secondary/40"}`} />
+              </div>
+            )}
           </div>
 
           <button
-            onClick={() => alert("Mostrando lista de participantes (Próximamente)...")}
+            onClick={() => setShowParticipantsModal(true)}
             className="flex items-center gap-4 w-full pt-2 hover:bg-muted/30 -mx-6 px-6 md:-mx-8 md:px-8 py-4 rounded-xl transition-colors"
           >
             <Users className="w-6 h-6 text-accent flex-shrink-0" />
@@ -522,6 +551,55 @@ export default function ItemDetailPage() {
               >
                 {deletingEvent ? "Eliminando..." : "Sí, eliminar"}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showParticipantsModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowParticipantsModal(false)}
+            aria-hidden="true"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full max-w-md bg-card border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[80vh]"
+          >
+            <div className="px-6 py-5 border-b border-border flex justify-between items-center">
+              <h3 className="text-xl font-bold">Participantes ({event.participants?.length || 0})</h3>
+              <button 
+                onClick={() => setShowParticipantsModal(false)}
+                className="p-2 hover:bg-muted rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 space-y-4">
+              {event.participants && event.participants.length > 0 ? (
+                event.participants.map((p) => (
+                  <div key={p._id || p.clerkId} className="flex items-center gap-3 p-2 hover:bg-muted/40 rounded-xl transition-colors">
+                    <Link href={`/user/${p.slug}`}>
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold cursor-pointer">
+                         {p.name ? p.name.substring(0, 2).toUpperCase() : p.username?.substring(0, 2).toUpperCase()}
+                      </div>
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/user/${p.slug}`} className="font-semibold text-sm truncate block hover:text-primary transition-colors">
+                        {p.name || p.username}
+                      </Link>
+                      <p className="text-xs text-muted-foreground truncate">@{p.username}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  Aún no hay participantes en este evento.
+                </div>
+              )}
             </div>
           </div>
         </div>
