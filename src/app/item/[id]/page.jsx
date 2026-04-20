@@ -317,7 +317,7 @@ export default function ItemDetailPage() {
         {/* Author Card */}
         {event.author && (
           <div className="flex items-center gap-3 bg-card rounded-2xl px-5 py-4 mb-8 border border-border shadow-sm">
-            <Link href={`/user/${event.author.slug}`}>
+            <Link href={`/user/${event.author.slug || event.author.username?.replace("@", "") || event.author._id}`}>
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold cursor-pointer hover:opacity-80 transition-opacity bg-primary"
               >
@@ -326,7 +326,7 @@ export default function ItemDetailPage() {
             </Link>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground mb-0.5">Organizado por</p>
-              <Link href={`/user/${event.author.slug}`} className="font-semibold text-sm truncate block hover:text-primary transition-colors">
+              <Link href={`/user/${event.author.slug || event.author.username?.replace("@", "") || event.author._id}`} className="font-semibold text-sm truncate block hover:text-primary transition-colors">
                 {event.author.name}
               </Link>
             </div>
@@ -639,13 +639,13 @@ export default function ItemDetailPage() {
               {event.participants && event.participants.length > 0 ? (
                 event.participants.map((p) => (
                   <div key={p._id || p.clerkId} className="flex items-center gap-3 p-2 hover:bg-muted/40 rounded-xl transition-colors">
-                    <Link href={`/user/${p.slug}`}>
+                    <Link href={`/user/${p.slug || p.username?.replace("@", "") || p._id}`}>
                       <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold cursor-pointer">
                         {p.name ? p.name.substring(0, 2).toUpperCase() : p.username?.substring(0, 2).toUpperCase()}
                       </div>
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/user/${p.slug}`} className="font-semibold text-sm truncate block hover:text-primary transition-colors">
+                      <Link href={`/user/${p.slug || p.username?.replace("@", "") || p._id}`} className="font-semibold text-sm truncate block hover:text-primary transition-colors">
                         {p.name || p.username}
                       </Link>
                       <p className="text-xs text-muted-foreground truncate">@{p.username}</p>
