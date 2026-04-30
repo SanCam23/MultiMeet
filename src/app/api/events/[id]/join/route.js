@@ -25,6 +25,10 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
+    if (event.status === "finished" || new Date(event.dateTime) < new Date()) {
+      return NextResponse.json({ error: "El evento ya ha finalizado" }, { status: 400 });
+    }
+
     // Toggle participant logic
     const isParticipant = event.participants.includes(user._id);
 
