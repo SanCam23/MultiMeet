@@ -33,13 +33,16 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    if (event.status !== "finished") {
-      return NextResponse.json({ error: "Solo se pueden añadir fotos a eventos finalizados" }, { status: 400 });
+    const isFinished = event.status === "finished" || new Date(event.dateTime) < new Date();
+    if (!isFinished) {
+      return NextResponse.json({ error: "Solo se pueden añadir fotos a eventos finalizados o que ya han pasado" }, { status: 400 });
     }
 
     const isParticipant = event.participants.some(p => p.toString() === user._id.toString());
-    if (!isParticipant) {
-      return NextResponse.json({ error: "Solo los participantes pueden añadir fotos" }, { status: 403 });
+    const isAuthor = event.author.toString() === user._id.toString();
+
+    if (!isParticipant && !isAuthor) {
+      return NextResponse.json({ error: "Solo los participantes o el autor pueden añadir fotos" }, { status: 403 });
     }
 
     const memory = {

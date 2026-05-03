@@ -34,7 +34,7 @@ export default function ItemDetailPage() {
   const [activeTab, setActiveTab] = useState("gallery");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
-  
+
   // Custom Modals State
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
@@ -279,7 +279,7 @@ export default function ItemDetailPage() {
       openSignIn();
       return;
     }
-    
+
     // Solo permitir rating si el usuario participó y el evento ha finalizado (o según tu lógica)
     if (!userJoined) {
       return;
@@ -404,21 +404,21 @@ export default function ItemDetailPage() {
         {event.parentEvent && (
           <Link href={`/item/${event.parentEvent._id}`}>
             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-8 relative overflow-hidden group transition-all hover:bg-primary/10 flex items-center gap-4 shadow-sm">
-               {event.parentEvent.coverImage ? (
-                 <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-background">
-                    <img src={event.parentEvent.coverImage} className="w-full h-full object-cover" alt="" />
-                 </div>
-               ) : (
-                 <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-8 h-8 text-primary/50" />
-                 </div>
-               )}
-               <div className="flex-1">
-                 <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Viene del meetup</p>
-                 <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{event.parentEvent.title}</p>
-                 <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">Ver evento original</p>
-               </div>
-               <ArrowRight className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              {event.parentEvent.coverImage ? (
+                <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-background">
+                  <img src={event.parentEvent.coverImage} className="w-full h-full object-cover" alt="" />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-8 h-8 text-primary/50" />
+                </div>
+              )}
+              <div className="flex-1">
+                <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Viene del meetup</p>
+                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{event.parentEvent.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">Ver evento original</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
             </div>
           </Link>
         )}
@@ -513,11 +513,11 @@ export default function ItemDetailPage() {
         {event.extensions && event.extensions.length > 0 && (
           <div className="mb-8 bg-card rounded-2xl p-6 border border-border shadow-sm">
             <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-               <Calendar className="w-5 h-5 text-accent" />
-               Próximas ediciones
+              <Calendar className="w-5 h-5 text-accent" />
+              Próximas ediciones
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-               Se han creado nuevas aportaciones basadas en este meetup original.
+              Se han creado nuevas aportaciones basadas en este meetup original.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {event.extensions.map(ext => (
@@ -533,8 +533,8 @@ export default function ItemDetailPage() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                       <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{ext.title}</p>
-                       <p className="text-xs text-muted-foreground capitalize">{new Date(ext.dateTime).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+                      <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{ext.title}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{new Date(ext.dateTime).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
                     </div>
                   </div>
                 </Link>
@@ -617,7 +617,7 @@ export default function ItemDetailPage() {
               </span>
             </div>
 
-            {isFinished && userJoined && (
+            {isFinished && (userJoined || isAuthor) && (
               <div className="mb-6">
                 <input
                   type="file"
@@ -644,9 +644,15 @@ export default function ItemDetailPage() {
                   const isMyImage = item.user?.clerkId === userId;
                   const canDelete = isMyImage || isAuthor;
 
+                  // Definir ratios dinámicos basados en el índice para crear un efecto visual variado
+                  const aspectClass = index % 4 === 0 ? "aspect-[16/9]" :
+                    index % 4 === 1 ? "aspect-video" :
+                      index % 4 === 2 ? "aspect-square" :
+                        "aspect-[16/9]";
+
                   return (
                     <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
-                      <div className="relative aspect-video">
+                      <div className={`relative ${aspectClass}`}>
                         <Image
                           src={url}
                           alt={`Subido por ${item.user?.username}`}
@@ -739,13 +745,13 @@ export default function ItemDetailPage() {
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
-            <button 
+            <button
               onClick={() => setShowDeleteModal(false)}
               className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-            
+
             <div className="mb-6 flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                 <Trash2 className="w-8 h-8" />
