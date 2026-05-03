@@ -41,6 +41,9 @@ export default function ItemDetailPage() {
   const [showRateModal, setShowRateModal] = useState(false);
   const [showRateSuccess, setShowRateSuccess] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showDeleteMediaModal, setShowDeleteMediaModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeletingMedia, setIsDeletingMedia] = useState(false);
 
   const [deletingEvent, setDeletingEvent] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -229,6 +232,37 @@ export default function ItemDetailPage() {
       alert("Error al subir el archivo");
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDeleteMedia = (itemId) => {
+    setItemToDelete(itemId);
+    setShowDeleteMediaModal(true);
+  };
+
+  const confirmDeleteMedia = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      setIsDeletingMedia(true);
+      const res = await fetch(`/api/events/${urlId}/gallery?itemId=${itemToDelete}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEvent({ ...event, userGallery: data.userGallery });
+        setShowDeleteMediaModal(false);
+        setItemToDelete(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Error al eliminar la imagen");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error al eliminar la imagen");
+    } finally {
+      setIsDeletingMedia(false);
     }
   };
 
@@ -583,7 +617,7 @@ export default function ItemDetailPage() {
               </span>
             </div>
 
-            {isFinished && (
+            {isFinished && userJoined && (
               <div className="mb-6">
                 <input
                   type="file"
@@ -607,6 +641,8 @@ export default function ItemDetailPage() {
               <Masonry columnsCount={2} gutter="16px">
                 {event.userGallery.map((item, index) => {
                   const url = item.url;
+                  const isMyImage = item.user?.clerkId === userId;
+                  const canDelete = isMyImage || isAuthor;
 
                   return (
                     <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
@@ -618,6 +654,15 @@ export default function ItemDetailPage() {
                           sizes="(max-width: 768px) 50vw, 33vw"
                           className="object-cover"
                         />
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDeleteMedia(item._id)}
+                            className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive shadow-lg z-10"
+                            title="Eliminar imagen"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       <div className="p-4">
                         <div className="flex items-center justify-between">
@@ -948,6 +993,46 @@ export default function ItemDetailPage() {
             <UserCheck className="w-5 h-5" />
           </div>
           <span className="text-sm font-semibold">Evento valorado correctamente. ¡Gracias!</span>
+        </div>
+      )}
+      {/* Modal para borrar imagen de la galería */}
+      {showDeleteMediaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowDeleteMediaModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">¿Eliminar imagen?</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                ¿Estás seguro de que deseas eliminar esta imagen de la galería? Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-12"
+                onClick={() => setShowDeleteMediaModal(false)}
+                disabled={isDeletingMedia}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl h-12"
+                onClick={confirmDeleteMedia}
+                disabled={isDeletingMedia}
+              >
+                {isDeletingMedia ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
