@@ -13,7 +13,7 @@ export function BottomNav() {
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },
     { icon: Search, label: "Buscar", path: "/categories" },
-    { icon: PlusCircle, label: "Crear", path: "/upload", isPrimary: true },
+    { icon: PlusCircle, label: "Crear", path: "/upload" },
     { icon: User, label: "Perfil", path: "/dashboard" },
   ];
  
@@ -27,24 +27,7 @@ export function BottomNav() {
           const Icon = item.icon;
           const isActive = pathname === item.path;
  
-          if (item.isPrimary) {
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className="flex flex-col items-center gap-1 focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
-                aria-label={item.label}
-              >
-                <div className="w-14 h-14 -mt-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                  <Icon className="w-7 h-7 text-white" aria-hidden="true" />
-                </div>
-                <span className="text-xs text-primary font-medium mt-1">
-                  {item.label}
-                </span>
-              </Link>
-            );
-          }
- 
+
           return (
             <React.Fragment key={item.path}>
               {item.label === "Perfil" ? (
@@ -52,7 +35,7 @@ export function BottomNav() {
                   <Show when="signed-in">
                     <Link
                       href={item.path}
-                      className="flex flex-col items-center focus:outline-none focus:ring-2 focus:ring-ring rounded-lg"
+                      className="flex flex-col items-center focus:outline-none rounded-lg"
                       aria-label={item.label}
                     >
                       {user?.imageUrl ? (
@@ -74,7 +57,7 @@ export function BottomNav() {
                   <Show when="signed-out">
                     <SignInButton mode="modal">
                       <button
-                        className="flex flex-col items-center gap-1 focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-1"
+                        className="flex flex-col items-center gap-1 focus:outline-none rounded-lg p-1"
                         aria-label="Iniciar Sesión"
                       >
                         <User
@@ -91,7 +74,7 @@ export function BottomNav() {
               ) : (
                 <Link
                   href={item.path}
-                  className="flex flex-col items-center gap-1 focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-1"
+                  className="flex flex-col items-center gap-1 focus:outline-none rounded-lg p-1"
                   aria-label={item.label}
                 >
                   <Icon

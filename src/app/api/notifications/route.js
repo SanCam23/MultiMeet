@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import connectToDatabase from "@/lib/mongoose";
 import Notification from "@/models/Notification";
 import User from "@/models/User";
+import Event from "@/models/Event";
 
 /**
  * GET /api/notifications

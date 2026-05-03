@@ -6,11 +6,12 @@ import { User, Home, Search, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
 import { useTheme } from "@/context/ThemeContext";
-import { Show, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
+import { Show, SignInButton, SignUpButton, useUser } from "@clerk/nextjs";
 
 export function TopAppBar() {
   const pathname = usePathname();
   const { theme } = useTheme();
+  const { user } = useUser();
   const isHighContrast = theme === "high-contrast";
 
   return (
@@ -93,28 +94,19 @@ export function TopAppBar() {
                 </SignUpButton>
               </Show>
               <Show when="signed-in">
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: {
-                        width: "36px",
-                        height: "36px",
-                      },
-                      userButtonAvatarBox: {
-                        width: "36px",
-                        height: "36px",
-                      },
-                    },
-                  }}
+                <Link
+                  href="/dashboard"
+                  className="flex items-center justify-center rounded-full overflow-hidden border-2 border-transparent hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                  aria-label="Ir a mi perfil"
                 >
-                  <UserButton.MenuItems>
-                    <UserButton.Link
-                      label="Mi Panel de Control"
-                      labelIcon={<User className="w-4 h-4" />}
-                      href="/dashboard"
-                    />
-                  </UserButton.MenuItems>
-                </UserButton>
+                  {user?.imageUrl ? (
+                    <img src={user.imageUrl} alt="Avatar" className="w-9 h-9 object-cover" />
+                  ) : (
+                    <div className="w-9 h-9 bg-muted flex items-center justify-center text-muted-foreground">
+                      <User className="w-5 h-5" />
+                    </div>
+                  )}
+                </Link>
               </Show>
             </div>
           </div>
