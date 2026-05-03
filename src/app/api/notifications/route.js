@@ -22,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 
-    const notifications = await Notification.find({ recipient: user._id })
+    const notifications = await Notification.find({ recipient: user._id, read: false })
       .populate("sender", "name username avatar")
       .populate("event", "title")
       .sort({ createdAt: -1 })
