@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { EventCard } from "@/components/EventCard";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@clerk/nextjs";
+import { Map } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const HomeMap = dynamic(() => import("@/components/HomeMap"), { ssr: false });
 
 const tabs = [
   { value: "following", label: "Siguiendo" },
@@ -16,6 +20,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState("topGlobal");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showMap, setShowMap] = useState(false);
   const [radius, setRadius] = useState(5); // Default 5km
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
@@ -62,7 +67,7 @@ export default function HomePage() {
   };
 
   return (
-    <section aria-label="Eventos">
+    <section aria-label="Eventos" className="relative min-h-screen">
       <div className="w-full mx-auto px-6 md:px-8 lg:px-12 pt-6 pb-8 max-w-[1440px]">
         {/* Tabs */}
         <div className="max-w-2xl mx-auto mb-4" role="tablist" aria-label="Categorías de eventos">
@@ -138,6 +143,18 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      {/* Floating Map Button */}
+      <button
+        onClick={() => setShowMap(true)}
+        className="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-40 bg-primary text-primary-foreground p-4 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center justify-center"
+        aria-label="Abrir mapa de eventos"
+      >
+        <Map className="w-6 h-6 md:w-7 md:h-7" />
+      </button>
+
+      {/* Map Overlay */}
+      {showMap && <HomeMap events={events} onClose={() => setShowMap(false)} />}
     </section>
   );
 }

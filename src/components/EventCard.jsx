@@ -42,9 +42,9 @@ export function EventCard({
   }
 
   return (
-    <Link href={`/item/${id}`} className="block focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
-      <article className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-border">
-        <div className="relative h-48">
+    <Link href={`/item/${id}`} className="block h-full focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
+      <article className="h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-border">
+        <div className="relative h-48 shrink-0">
           {displayImage ? (
             <Image
               src={displayImage}
@@ -74,9 +74,9 @@ export function EventCard({
             </Badge>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-6 flex-1 flex flex-col">
           <h3 className="font-semibold text-lg mb-4 line-clamp-2">{displayTitle}</h3>
-          <div className="space-y-3 text-sm text-muted-foreground">
+          <div className="space-y-3 text-sm text-muted-foreground mt-auto">
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-primary" aria-hidden="true" />
               <span>

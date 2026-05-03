@@ -5,28 +5,30 @@ import User from "@/models/User";
 export async function GET(req, { params }) {
   try {
     const { username } = await params;
-    
-    // El username en la URL puede venir con @ o sin él
-    const finalUsername = username.startsWith("%40") || username.startsWith("@") 
-      ? username.replace("%40", "@")
-      : `@${username}`;
-
     await connectToDatabase();
     
-    const decodedUsername = decodeURIComponent(username);
-    const decodedFinal = decodeURIComponent(finalUsername);
+    const decodedVal = decodeURIComponent(username);
+    // Limpiamos el @ del inicio para la búsqueda por slug
+    const cleanVal = decodedVal.startsWith('@') ? decodedVal.slice(1) : decodedVal;
+    // Preparamos la versión con @ para búsqueda por username
+    const atVal = `@${cleanVal}`;
 
-    // Buscamos al usuario por su slug (ej: "carlos-ruiz") o su username (ej: "@carlosruiz")
+    console.log(`API [GET] /api/user/username/${username} -> searching for clean: ${cleanVal}, at: ${atVal}`);
+
     const user = await User.findOne({
       $or: [
-        { slug: { $regex: new RegExp(`^${decodedUsername}$`, 'i') } },
-        { username: { $regex: new RegExp(`^${decodedFinal}$`, 'i') } },
-        { username: { $regex: new RegExp(`^${decodedUsername}$`, 'i') } },
+        { slug: { $regex: new RegExp(`^${cleanVal}$`, 'i') } },
+        { username: { $regex: new RegExp(`^${cleanVal}$`, 'i') } },
+        { username: { $regex: new RegExp(`^${atVal}$`, 'i') } },
+        // Fallback for cases where slug might be something else
+        { slug: { $regex: new RegExp(`^${decodedVal}$`, 'i') } },
       ]
-    }).select("-email -clerkId"); // Omitimos campos sensibles
+    })
+    .populate("followers following", "name username avatar slug")
+    .select("-email -clerkId");
 
     if (!user) {
-      console.warn(`User search failed for: ${decodedUsername} / ${decodedFinal}`);
+      console.warn(`User search failed for: ${decodedVal}`);
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 

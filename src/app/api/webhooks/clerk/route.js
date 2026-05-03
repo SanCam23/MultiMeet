@@ -59,6 +59,10 @@ export async function POST(req) {
     
     const email = email_addresses[0]?.email_address || ''
     const name = `${first_name || ''} ${last_name || ''}`.trim() || 'Usuario sin nombre'
+    
+    // Generar slug si no existe (usando username o nombre)
+    const slugBase = username || name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+    const slug = slugBase.startsWith('@') ? slugBase.slice(1) : slugBase
 
     await User.findOneAndUpdate(
       { clerkId: id },
@@ -69,6 +73,7 @@ export async function POST(req) {
           name,
           avatar: image_url,
           username: username || '',
+          slug: slug,
         }
       },
       { upsert: true, new: true }
