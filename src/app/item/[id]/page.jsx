@@ -1077,7 +1077,6 @@ export default function ItemDetailPage() {
         </div>
       )}
 
-<<<<<<< HEAD
       {/* Lightbox Modal */}
       {selectedMediaIndex !== null && event.userGallery && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/90 backdrop-blur-xl p-4 animate-in fade-in duration-200">
