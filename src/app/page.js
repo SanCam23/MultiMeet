@@ -5,6 +5,7 @@ import { EventCard } from "@/components/EventCard";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@clerk/nextjs";
 import { Map, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
 const HomeMap = dynamic(() => import("@/components/HomeMap"), { ssr: false });
@@ -16,6 +17,7 @@ const tabs = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const [activeTab, setActiveTab] = useState("topGlobal");
   const [events, setEvents] = useState([]);
@@ -154,7 +156,7 @@ export default function HomePage() {
                         <h3 className="text-xl font-bold text-foreground">Ubicación no definida</h3>
                         <p className="text-sm">Para ver los eventos más populares en tu ciudad, primero debes configurar tu ubicación en tu perfil.</p>
                         <button 
-                          onClick={() => window.location.href = "/dashboard?edit=true"}
+                          onClick={() => router.push("/dashboard?edit=true")}
                           className="mt-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity"
                         >
                           Ir a mi perfil
