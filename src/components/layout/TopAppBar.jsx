@@ -15,7 +15,7 @@ export function TopAppBar() {
   const isHighContrast = theme === "high-contrast";
 
   return (
-    <header className="bg-background border-b border-border sticky top-0 z-10 shadow-sm">
+    <header className="bg-background border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="w-full mx-auto max-w-[1440px]">
         <div className="px-4 md:px-6 lg:px-12 py-3 md:py-5 flex items-center gap-2 md:gap-4">
           {/* Logo and title */}

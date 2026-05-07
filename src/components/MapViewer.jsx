@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
@@ -17,37 +16,42 @@ const customIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-function ChangeView({ center }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center && center[0] && center[1]) {
-      map.setView(center, map.getZoom(), { animate: true });
-    }
-  }, [center, map]);
-  return null;
-}
-
 export default function MapViewer({ lat, lng }) {
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !mapRef.current || !lat || !lng) return;
+
+    if (!mapInstance.current) {
+      mapInstance.current = L.map(mapRef.current, {
+        zoomControl: false,
+        scrollWheelZoom: false,
+        dragging: false,
+      }).setView([lat, lng], 15);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(mapInstance.current);
+
+      L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance.current);
+    } else {
+      mapInstance.current.setView([lat, lng], 15);
+    }
+
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
+    };
+  }, [lat, lng]);
+
   if (!lat || !lng) return null;
-  const position = [lat, lng];
 
   return (
     <div className="h-full w-full relative z-0">
-      <MapContainer
-        center={position}
-        zoom={15}
-        style={{ height: "100%", width: "100%", zIndex: 0 }}
-        zoomControl={false}
-        scrollWheelZoom={false}
-        dragging={false}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={position} icon={customIcon} />
-        <ChangeView center={position} />
-      </MapContainer>
+      <div ref={mapRef} style={{ height: "100%", width: "100%", zIndex: 0 }} />
     </div>
   );
 }
