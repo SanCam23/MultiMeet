@@ -344,6 +344,15 @@ export default function ItemDetailPage() {
     }
   };
 
+  const handleBack = () => {
+    // Si viene de un enlace directo (QR) el historial es corto, redirigir al inicio
+    if (window.history.length > 2 || document.referrer.includes(window.location.host)) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
   const getEventDateText = () => {
     if (event.dateTime) {
       const d = new Date(event.dateTime);
@@ -366,7 +375,7 @@ export default function ItemDetailPage() {
         />
 
         <button
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="absolute top-6 left-6 bg-card/90 backdrop-blur-sm rounded-full p-3 shadow-lg hover:bg-card transition-colors"
           aria-label="Volver atrás"
         >
@@ -1079,13 +1088,13 @@ export default function ItemDetailPage() {
                   type="text"
                   readOnly
                   value={typeof window !== 'undefined' ? `${window.location.origin}/item/${urlId}` : ''}
-                  className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-foreground truncate"
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm px-2 text-foreground truncate"
                 />
                 <Button
                   size="sm"
                   onClick={copyLinkFromModal}
                   variant={shareLinkCopied ? "default" : "secondary"}
-                  className="rounded-lg h-8"
+                  className="rounded-lg h-8 flex-shrink-0"
                 >
                   {shareLinkCopied ? <span className="flex items-center gap-1"><UserCheck className="w-4 h-4"/> ¡Copiado!</span> : "Copiar"}
                 </Button>
