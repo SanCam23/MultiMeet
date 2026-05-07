@@ -24,7 +24,7 @@ export async function GET(request) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const minParticipantsRaw = searchParams.get("minParticipants");
-    const status = (searchParams.get("status") || "active").trim();
+    const status = (searchParams.get("status") || "").trim();
 
     const categoriesParam =
       searchParams.get("categories") || searchParams.getAll("category").join(",");
@@ -40,11 +40,14 @@ export async function GET(request) {
 
     const minParticipants = Number.parseInt(minParticipantsRaw || "", 10);
 
-    const query = {
-      status: ["active", "finished", "cancelled"].includes(status)
-        ? status
-        : "active",
-    };
+    const query = {};
+
+    if (status && ["active", "finished", "cancelled"].includes(status)) {
+      query.status = status;
+    } else {
+      // Por defecto muestra eventos activos y finalizados
+      query.status = { $in: ["active", "finished"] };
+    }
 
     if (categories.length > 0) {
       query.categories = { $in: categories };
@@ -82,11 +85,20 @@ export async function GET(request) {
     }
 
     if (q) {
+      // Escapamos caracteres especiales de regex y creamos un patrón tolerante a tildes
+      const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const flexibleQ = safeQ
+        .replace(/[aAáÁàÀäÄâÂ]/g, "[aAáÁàÀäÄâÂ]")
+        .replace(/[eEéÉèÈëËêÊ]/g, "[eEéÉèÈëËêÊ]")
+        .replace(/[iIíÍìÌïÏîÎ]/g, "[iIíÍìÌïÏîÎ]")
+        .replace(/[oOóÓòÒöÖôÔ]/g, "[oOóÓòÒöÖôÔ]")
+        .replace(/[uUúÚùÙüÜûÛ]/g, "[uUúÚùÙüÜûÛ]");
+
       query.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-        { locationText: { $regex: q, $options: "i" } },
-        { categories: { $regex: q, $options: "i" } },
+        { title: { $regex: flexibleQ, $options: "i" } },
+        { description: { $regex: flexibleQ, $options: "i" } },
+        { locationText: { $regex: flexibleQ, $options: "i" } },
+        { categories: { $regex: flexibleQ, $options: "i" } },
       ];
     }
 

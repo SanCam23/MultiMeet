@@ -225,7 +225,12 @@ export default function CategoriesPage() {
                 type="search"
                 placeholder="Busca eventos, personas o temas..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value === "") {
+                    setSubmittedQuery("");
+                  }
+                }}
                 className="pl-12 h-12 rounded-xl"
               />
             </div>
@@ -323,6 +328,7 @@ export default function CategoriesPage() {
                     type="button"
                     className="h-12 rounded-xl"
                     onClick={() => {
+                      setSubmittedQuery(searchQuery.trim());
                       setAppliedLocation(filterLocationData.address);
                       setAppliedStartDate(filterStartDate);
                       setAppliedEndDate(filterEndDate);
