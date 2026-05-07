@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, MapPin, Calendar, Tag, Image as ImageIcon, PlusCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Tag, Image as ImageIcon, PlusCircle, Sparkles, AlertCircle, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -45,10 +45,14 @@ export default function UploadPage() {
   const [coverImagePreview, setCoverImagePreview] = useState("");
   const [coverImageName, setCoverImageName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
+
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const [parentEventId, setParentEventId] = useState("");
   const [myEvents, setMyEvents] = useState([]);
@@ -127,6 +131,46 @@ export default function UploadPage() {
       setSelectedCategories(selectedCategories.filter((c) => c !== category));
     } else {
       setSelectedCategories([...selectedCategories, category]);
+    }
+  };
+
+  const handleGenerateDescription = async () => {
+    setSubmitError("");
+    setSubmitSuccess("");
+
+    if (!title.trim() || selectedCategories.length === 0 || !locationData.address.trim() || !date || !time) {
+      setModalMessage("Debes completar el título, la ubicación, la fecha y la hora para que podamos generar tu descripción");
+      setShowModal(true);
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+
+      const response = await fetch("/api/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          categories: selectedCategories,
+          location: locationData.address,
+          date,
+          time,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "No se pudo generar la descripción.");
+      }
+
+      setDescription(data.description);
+    } catch (error) {
+      setModalMessage(error.message || "Ocurrió un error al conectar con la IA. Inténtalo de nuevo.");
+      setShowModal(true);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -380,6 +424,29 @@ export default function UploadPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   required
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGenerateDescription}
+                  disabled={isGenerating}
+                  className="mt-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all flex items-center gap-2 font-medium disabled:opacity-60"
+                >
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-accent" />
+                      Generame la descripción
+                    </>
+                  )}
+                </Button>
               </div>
 
               {/* Categories */}
@@ -570,6 +637,33 @@ export default function UploadPage() {
           </SignInButton>
         </div>
       </Show>
+
+      {/* Alert Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          />
+          <div className="relative bg-card border border-border shadow-2xl rounded-3xl p-8 max-w-md w-full animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-destructive" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Campos incompletos</h3>
+              <p className="text-muted-foreground mb-6">
+                {modalMessage}
+              </p>
+              <Button 
+                onClick={() => setShowModal(false)}
+                className="w-full rounded-xl h-12"
+              >
+                Entendido
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

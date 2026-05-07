@@ -36,6 +36,9 @@ export default function ItemDetailPage() {
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
 
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+
   // Custom Modals State
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
@@ -130,7 +133,16 @@ export default function ItemDetailPage() {
     const eventUrl = `${window.location.origin}/item/${urlId}`;
     navigator.clipboard.writeText(eventUrl).then(() => {
       setShowSharePopup(true);
+      setShowShareModal(true);
       setTimeout(() => setShowSharePopup(false), 2500);
+    });
+  };
+
+  const copyLinkFromModal = () => {
+    const eventUrl = `${window.location.origin}/item/${urlId}`;
+    navigator.clipboard.writeText(eventUrl).then(() => {
+      setShareLinkCopied(true);
+      setTimeout(() => setShareLinkCopied(false), 2000);
     });
   };
 
@@ -333,6 +345,15 @@ export default function ItemDetailPage() {
     }
   };
 
+  const handleBack = () => {
+    // Si viene de un enlace directo (QR) el historial es corto, redirigir al inicio
+    if (window.history.length > 2 || document.referrer.includes(window.location.host)) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
   const getEventDateText = () => {
     if (event.dateTime) {
       const d = new Date(event.dateTime);
@@ -355,7 +376,7 @@ export default function ItemDetailPage() {
         />
 
         <button
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="absolute top-6 left-6 bg-card/90 backdrop-blur-sm rounded-full p-3 shadow-lg hover:bg-card transition-colors"
           aria-label="Volver atrás"
         >
@@ -1056,6 +1077,7 @@ export default function ItemDetailPage() {
         </div>
       )}
 
+<<<<<<< HEAD
       {/* Lightbox Modal */}
       {selectedMediaIndex !== null && event.userGallery && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/90 backdrop-blur-xl p-4 animate-in fade-in duration-200">
@@ -1140,6 +1162,47 @@ export default function ItemDetailPage() {
                     {new Date(event.userGallery[selectedMediaIndex].uploadedAt).toLocaleDateString()}
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal interactivo de compartir (QR + Link) */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6">
+              <h3 className="text-xl font-bold mb-4">Compartir evento</h3>
+              <div className="bg-white p-4 rounded-xl inline-block mb-4">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}/item/${urlId}` : '')}`}
+                  alt="QR Code de evento"
+                  className="w-48 h-48 mx-auto"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">Escanea el código QR o copia el enlace a continuación</p>
+              <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-xl border z-10 relative">
+                <input
+                  type="text"
+                  readOnly
+                  value={typeof window !== 'undefined' ? `${window.location.origin}/item/${urlId}` : ''}
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm px-2 text-foreground truncate"
+                />
+                <Button
+                  size="sm"
+                  onClick={copyLinkFromModal}
+                  variant={shareLinkCopied ? "default" : "secondary"}
+                  className="rounded-lg h-8 flex-shrink-0"
+                >
+                  {shareLinkCopied ? <span className="flex items-center gap-1"><UserCheck className="w-4 h-4"/> ¡Copiado!</span> : "Copiar"}
+                </Button>
               </div>
             </div>
           </div>
