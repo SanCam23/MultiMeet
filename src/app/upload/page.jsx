@@ -22,7 +22,7 @@ const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
 });
 
 const categories = [
-  "Tech", "Social", "Fitness", "Music", "Outdoor", "Food", 
+  "Tech", "Social", "Fitness", "Music", "Outdoor", "Food",
   "Art", "Books", "Sports", "Gaming", "Professional"
 ];
 
@@ -304,11 +304,10 @@ export default function UploadPage() {
                 role="tab"
                 aria-selected={formType === "new"}
                 onClick={() => setFormType("new")}
-                className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                  formType === "new"
+                className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${formType === "new"
                     ? `bg-primary ${isHighContrast ? "text-black" : "text-white"} shadow-sm`
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Nuevo Meetup
               </button>
@@ -316,11 +315,10 @@ export default function UploadPage() {
                 role="tab"
                 aria-selected={formType === "extend"}
                 onClick={() => setFormType("extend")}
-                className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                  formType === "extend"
+                className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${formType === "extend"
                     ? `bg-primary ${isHighContrast ? "text-black" : "text-white"} shadow-sm`
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Ampliar Evento
               </button>
@@ -331,11 +329,10 @@ export default function UploadPage() {
             <form onSubmit={handleSubmit} className="space-y-8">
               {(submitError || submitSuccess) && (
                 <div
-                  className={`rounded-xl border px-4 py-3 text-sm ${
-                    submitError
+                  className={`rounded-xl border px-4 py-3 text-sm ${submitError
                       ? "border-destructive/30 bg-destructive/10 text-destructive"
                       : "border-green-600/30 bg-green-600/10 text-green-700"
-                  }`}
+                    }`}
                 >
                   {submitError || submitSuccess}
                 </div>
@@ -413,42 +410,6 @@ export default function UploadPage() {
                 />
               </div>
 
-              {/* Description */}
-              <div>
-                <Label htmlFor="description" className="mb-3 block">Descripción</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Cuéntale a la gente de qué trata tu meetup..."
-                  className="min-h-32 rounded-xl"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGenerateDescription}
-                  disabled={isGenerating}
-                  className="mt-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all flex items-center gap-2 font-medium disabled:opacity-60"
-                >
-                  {isGenerating ? (
-                    <>
-                      <svg className="animate-spin w-4 h-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Generando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 text-accent" />
-                      Generame la descripción
-                    </>
-                  )}
-                </Button>
-              </div>
-
               {/* Categories */}
               <div>
                 <Label className="mb-3 block">
@@ -461,11 +422,10 @@ export default function UploadPage() {
                       key={category}
                       type="button"
                       onClick={() => toggleCategory(category)}
-                      className={`inline-flex px-4 py-2 rounded-full text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-ring transition-colors border ${
-                        selectedCategories.includes(category)
+                      className={`inline-flex px-4 py-2 rounded-full text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-ring transition-colors border ${selectedCategories.includes(category)
                           ? "bg-accent text-accent-foreground border-accent hover:bg-accent/90"
                           : "bg-transparent text-foreground border-input hover:border-accent"
-                      }`}
+                        }`}
                     >
                       {category}
                     </button>
@@ -534,6 +494,42 @@ export default function UploadPage() {
                 />
               </div>
 
+              {/* Description */}
+              <div>
+                <Label htmlFor="description" className="mb-3 block">Descripción</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Cuéntale a la gente de qué trata tu meetup..."
+                  className="min-h-32 rounded-xl"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGenerateDescription}
+                  disabled={isGenerating}
+                  className="mt-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all flex items-center gap-2 font-medium disabled:opacity-60"
+                >
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-accent" />
+                      Generame la descripción
+                    </>
+                  )}
+                </Button>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full h-14 text-base rounded-xl shadow-lg"
@@ -547,11 +543,10 @@ export default function UploadPage() {
             <form onSubmit={handleSubmit} className="space-y-8">
               {(submitError || submitSuccess) && (
                 <div
-                  className={`rounded-xl border px-4 py-3 text-sm ${
-                    submitError
+                  className={`rounded-xl border px-4 py-3 text-sm ${submitError
                       ? "border-destructive/30 bg-destructive/10 text-destructive"
                       : "border-green-600/30 bg-green-600/10 text-green-700"
-                  }`}
+                    }`}
                 >
                   {submitError || submitSuccess}
                 </div>
@@ -641,7 +636,7 @@ export default function UploadPage() {
       {/* Alert Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div 
+          <div
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setShowModal(false)}
           />
@@ -654,7 +649,7 @@ export default function UploadPage() {
               <p className="text-muted-foreground mb-6">
                 {modalMessage}
               </p>
-              <Button 
+              <Button
                 onClick={() => setShowModal(false)}
                 className="w-full rounded-xl h-12"
               >
