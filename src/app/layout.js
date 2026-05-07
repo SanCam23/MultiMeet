@@ -18,6 +18,15 @@ export const metadata = {
   description:
     "Descubre y crea meetups, eventos y experiencias en tu ciudad. Conecta con gente que comparte tus intereses.",
   keywords: ["meetups", "eventos", "comunidad", "networking", "MultiMeet"],
+  icons: {
+    icon: "/logo.png",
+    apple: "/apple-icon.png",
+  },
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }) {
