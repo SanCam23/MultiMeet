@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, ArrowRight, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, Calendar, Users, Share2, Link as LinkIcon, UserPlus, UserCheck, Upload, Star, Trash2, Video, X, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
-import Masonry from "react-responsive-masonry";
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { PreviousEditions } from "@/components/PreviousEditions";
 import { StarRating } from "@/components/StarRating";
 import { useTheme } from "@/context/ThemeContext";
@@ -34,6 +34,7 @@ export default function ItemDetailPage() {
   const [activeTab, setActiveTab] = useState("gallery");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
 
   // Custom Modals State
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -638,52 +639,65 @@ export default function ItemDetailPage() {
             )}
 
             {hasGallery && (
-              <Masonry columnsCount={2} gutter="16px">
-                {event.userGallery.map((item, index) => {
-                  const url = item.url;
-                  const isMyImage = item.user?.clerkId === userId;
-                  const canDelete = isMyImage || isAuthor;
+              <ResponsiveMasonry columnsCountBreakPoints={{ 300: 2, 768: 2, 1024: 3 }}>
+                <Masonry gutter="16px">
+                  {event.userGallery.map((item, index) => {
+                    const url = item.url;
+                    const isMyImage = item.user?.clerkId === userId;
+                    const canDelete = isMyImage || isAuthor;
 
-                  // Definir ratios dinámicos basados en el índice para crear un efecto visual variado
-                  const aspectClass = index % 4 === 0 ? "aspect-[16/9]" :
-                    index % 4 === 1 ? "aspect-video" :
-                      index % 4 === 2 ? "aspect-square" :
-                        "aspect-[16/9]";
-
-                  return (
-                    <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
-                      <div className={`relative ${aspectClass}`}>
-                        <Image
-                          src={url}
-                          alt={`Subido por ${item.user?.username}`}
-                          fill
-                          sizes="(max-width: 768px) 50vw, 33vw"
-                          className="object-cover"
-                        />
-                        {canDelete && (
-                          <button
-                            onClick={() => handleDeleteMedia(item._id)}
-                            className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive shadow-lg z-10"
-                            title="Eliminar imagen"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-sm">{item.user?.name || item.user?.username}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(item.uploadedAt).toLocaleDateString()}
-                            </p>
+                    return (
+                      <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
+                        <div 
+                          className="relative cursor-pointer"
+                          onClick={() => setSelectedMediaIndex(index)}
+                        >
+                          <Image
+                            src={url}
+                            alt={`Subido por ${item.user?.username || item.user?.name || "usuario"}`}
+                            width={600}
+                            height={600}
+                            className="w-full h-auto block hover:opacity-90 transition-opacity"
+                            unoptimized={url.includes("unsplash.com") || url.includes("images.unsplash.com")}
+                          />
+                          {item.type === "video" && (
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                              <div className="bg-white/90 rounded-full p-3 shadow-md">
+                                <Video className="w-6 h-6 text-primary" />
+                              </div>
+                            </div>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteMedia(item._id);
+                              }}
+                              className="absolute top-3 right-3 bg-primary/90 text-primary-foreground p-2 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-primary shadow-lg z-10"
+                              title="Eliminar imagen"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{item.user?.name || item.user?.username || "Usuario"}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(item.uploadedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {item.type !== "video" && (
+                              <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                            )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </Masonry>
+                    );
+                  })}
+                </Masonry>
+              </ResponsiveMasonry>
             )}
           </div>
         )}
@@ -1037,6 +1051,96 @@ export default function ItemDetailPage() {
               >
                 {isDeletingMedia ? "Eliminando..." : "Eliminar"}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {selectedMediaIndex !== null && event.userGallery && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/90 backdrop-blur-xl p-4 animate-in fade-in duration-200">
+          {/* Close Button */}
+          <button
+            onClick={() => setSelectedMediaIndex(null)}
+            className="absolute top-6 right-6 bg-card/90 backdrop-blur-sm border border-border text-foreground hover:bg-accent hover:text-accent-foreground p-3 rounded-full shadow-lg transition-colors z-20"
+            aria-label="Cerrar galería"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          {/* Navigation Arrows */}
+          {event.userGallery.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedMediaIndex((prev) => (prev === 0 ? event.userGallery.length - 1 : prev - 1));
+                }}
+                className="absolute left-4 md:left-8 bg-card/90 backdrop-blur-sm border border-border text-foreground hover:bg-accent hover:text-accent-foreground p-3 rounded-full shadow-lg transition-colors z-20"
+                aria-label="Imagen anterior"
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedMediaIndex((prev) => (prev === event.userGallery.length - 1 ? 0 : prev + 1));
+                }}
+                className="absolute right-4 md:right-8 bg-card/90 backdrop-blur-sm border border-border text-foreground hover:bg-accent hover:text-accent-foreground p-3 rounded-full shadow-lg transition-colors z-20"
+                aria-label="Imagen siguiente"
+              >
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            </>
+          )}
+
+          {/* Media Container */}
+          <div className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center pointer-events-none p-4 md:p-12">
+            <div className="relative pointer-events-auto w-full h-full flex items-center justify-center">
+              {event.userGallery[selectedMediaIndex].type === "video" ? (
+                <video 
+                  src={event.userGallery[selectedMediaIndex].url} 
+                  controls 
+                  autoPlay
+                  className="max-h-[75vh] max-w-full rounded-2xl shadow-2xl border border-border bg-black/5"
+                />
+              ) : (
+                <Image 
+                  src={event.userGallery[selectedMediaIndex].url} 
+                  alt="Gallery preview"
+                  width={1200}
+                  height={1200}
+                  style={{ width: 'auto', height: 'auto' }}
+                  className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl border border-border bg-black/5"
+                  priority
+                  unoptimized={event.userGallery[selectedMediaIndex].url.includes("unsplash.com") || event.userGallery[selectedMediaIndex].url.includes("images.unsplash.com")}
+                />
+              )}
+            </div>
+            
+            {/* User Info Pill */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
+              <div className="bg-card/95 backdrop-blur-md border border-border px-6 py-3 rounded-full shadow-xl flex items-center gap-3">
+                {event.userGallery[selectedMediaIndex].user?.imageUrl ? (
+                  <img 
+                    src={event.userGallery[selectedMediaIndex].user.imageUrl} 
+                    alt="Avatar" 
+                    className="w-8 h-8 rounded-full object-cover border border-border"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs">
+                    {(event.userGallery[selectedMediaIndex].user?.name || "U").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex flex-col text-left">
+                  <p className="text-foreground font-semibold text-sm leading-tight">
+                    {event.userGallery[selectedMediaIndex].user?.name || event.userGallery[selectedMediaIndex].user?.username || "Usuario"}
+                  </p>
+                  <p className="text-muted-foreground text-xs leading-tight mt-0.5">
+                    {new Date(event.userGallery[selectedMediaIndex].uploadedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
