@@ -38,8 +38,7 @@ export async function GET(request) {
         }
         else if (tab === "topInCity") {
             if (!user || user.lat === null || user.lng === null) {
-                // Fallback or empty if no location
-                return NextResponse.json([], { status: 200 });
+                return NextResponse.json({ error: "LOCATION_NOT_SET", message: "No tienes la ubicación definida" }, { status: 400 });
             }
 
             // MongoDB geospatial query (requires 2dsphere index on location or manual calculation)

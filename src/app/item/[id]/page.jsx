@@ -25,7 +25,7 @@ const MapViewer = dynamic(() => import("@/components/MapViewer"), {
 });
 
 export default function ItemDetailPage() {
-  const { userId } = useAuth();
+  const { userId, isLoaded } = useAuth();
   const { openSignIn } = useClerk();
   const router = useRouter();
   const params = useParams();
@@ -34,6 +34,17 @@ export default function ItemDetailPage() {
   const [activeTab, setActiveTab] = useState("gallery");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+
+  // Custom Modals State
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [showRateSuccess, setShowRateSuccess] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showDeleteMediaModal, setShowDeleteMediaModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeletingMedia, setIsDeletingMedia] = useState(false);
+
   const [deletingEvent, setDeletingEvent] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const { theme } = useTheme();
@@ -47,6 +58,13 @@ export default function ItemDetailPage() {
   const fileInputRef = useRef(null);
 
   const urlId = params?.id;
+
+  useEffect(() => {
+    if (isLoaded && !userId) {
+      router.replace("/");
+      setTimeout(() => openSignIn(), 100);
+    }
+  }, [isLoaded, userId, router, openSignIn]);
 
   useEffect(() => {
     if (!urlId) return;
@@ -72,6 +90,14 @@ export default function ItemDetailPage() {
       });
   }, [urlId, userId]);
 
+  if (!isLoaded || (isLoaded && !userId)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Redirigiendo...</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -92,12 +118,19 @@ export default function ItemDetailPage() {
     );
   }
 
-  const isFinished = event.status === "finished";
+  const isFinished = event.status === "finished" || new Date(event.dateTime) < new Date();
   const hasGallery = event.userGallery && event.userGallery.length > 0;
 
   const handleShare = () => {
-    setShowSharePopup(true);
-    setTimeout(() => setShowSharePopup(false), 2500);
+    if (!userId) {
+      openSignIn();
+      return;
+    }
+    const eventUrl = `${window.location.origin}/item/${urlId}`;
+    navigator.clipboard.writeText(eventUrl).then(() => {
+      setShowSharePopup(true);
+      setTimeout(() => setShowSharePopup(false), 2500);
+    });
   };
 
   const handleJoinOrFinish = async () => {
@@ -107,22 +140,35 @@ export default function ItemDetailPage() {
     }
 
     if (isAuthor && !isFinished) {
-      if (!confirm("¿Seguro que deseas finalizar el evento?")) return;
-      try {
-        const res = await fetch(`/api/events/${urlId}/finish`, {
-          method: "POST"
-        });
-        if (res.ok) {
-          setEvent({ ...event, status: "finished" });
-        }
-      } catch (e) {
-        console.error(e);
-      }
+      setShowFinishModal(true);
       return;
     }
 
     if (isFinished) return;
 
+    if (userJoined) {
+      setShowLeaveModal(true);
+    } else {
+      setShowJoinModal(true);
+    }
+  };
+
+  const confirmFinish = async () => {
+    try {
+      const res = await fetch(`/api/events/${urlId}/finish`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        setEvent({ ...event, status: "finished" });
+        setShowFinishModal(false);
+      }
+    } catch (e) {
+      console.error(e);
+      setShowFinishModal(false);
+    }
+  };
+
+  const confirmJoin = async () => {
     try {
       const res = await fetch(`/api/events/${urlId}/join`, {
         method: "POST"
@@ -131,6 +177,24 @@ export default function ItemDetailPage() {
         const data = await res.json();
         setUserJoined(data.joined);
         setEvent({ ...event, participantsCount: data.participantsCount });
+        setShowJoinModal(false);
+        setShowLeaveModal(false);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const confirmLeave = async () => {
+    try {
+      const res = await fetch(`/api/events/${urlId}/join`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserJoined(data.joined);
+        setEvent({ ...event, participantsCount: data.participantsCount });
+        setShowLeaveModal(false);
       }
     } catch (e) {
       console.error(e);
@@ -171,6 +235,37 @@ export default function ItemDetailPage() {
     }
   };
 
+  const handleDeleteMedia = (itemId) => {
+    setItemToDelete(itemId);
+    setShowDeleteMediaModal(true);
+  };
+
+  const confirmDeleteMedia = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      setIsDeletingMedia(true);
+      const res = await fetch(`/api/events/${urlId}/gallery?itemId=${itemToDelete}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEvent({ ...event, userGallery: data.userGallery });
+        setShowDeleteMediaModal(false);
+        setItemToDelete(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Error al eliminar la imagen");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error al eliminar la imagen");
+    } finally {
+      setIsDeletingMedia(false);
+    }
+  };
+
   const triggerUpload = () => {
     if (!userId) {
       openSignIn();
@@ -184,19 +279,33 @@ export default function ItemDetailPage() {
       openSignIn();
       return;
     }
+
+    // Solo permitir rating si el usuario participó y el evento ha finalizado (o según tu lógica)
+    if (!userJoined) {
+      return;
+    }
+
     if (rating > 0) {
-      try {
-        const res = await fetch(`/api/events/${urlId}/rating`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rating })
-        });
-        if (res.ok) {
-          alert(`¡Gracias! Has valorado el evento con ${rating} estrellas.`);
-        }
-      } catch (e) {
-        console.error(e);
+      setShowRateModal(true);
+    }
+  };
+
+  const confirmRating = async () => {
+    try {
+      const res = await fetch(`/api/events/${urlId}/rating`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating })
+      });
+      if (res.ok) {
+        setShowRateModal(false);
+        setShowRateSuccess(true);
+        setTimeout(() => setShowRateSuccess(false), 3000);
       }
+    } catch (e) {
+      console.error(e);
+      alert("Error al valorar el evento.");
+      setShowRateModal(false);
     }
   };
 
@@ -295,21 +404,21 @@ export default function ItemDetailPage() {
         {event.parentEvent && (
           <Link href={`/item/${event.parentEvent._id}`}>
             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-8 relative overflow-hidden group transition-all hover:bg-primary/10 flex items-center gap-4 shadow-sm">
-               {event.parentEvent.coverImage ? (
-                 <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-background">
-                    <img src={event.parentEvent.coverImage} className="w-full h-full object-cover" alt="" />
-                 </div>
-               ) : (
-                 <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-8 h-8 text-primary/50" />
-                 </div>
-               )}
-               <div className="flex-1">
-                 <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Viene del meetup</p>
-                 <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{event.parentEvent.title}</p>
-                 <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">Ver evento original</p>
-               </div>
-               <ArrowRight className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              {event.parentEvent.coverImage ? (
+                <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-background">
+                  <img src={event.parentEvent.coverImage} className="w-full h-full object-cover" alt="" />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-8 h-8 text-primary/50" />
+                </div>
+              )}
+              <div className="flex-1">
+                <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Viene del meetup</p>
+                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{event.parentEvent.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">Ver evento original</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
             </div>
           </Link>
         )}
@@ -404,11 +513,11 @@ export default function ItemDetailPage() {
         {event.extensions && event.extensions.length > 0 && (
           <div className="mb-8 bg-card rounded-2xl p-6 border border-border shadow-sm">
             <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-               <Calendar className="w-5 h-5 text-accent" />
-               Próximas ediciones
+              <Calendar className="w-5 h-5 text-accent" />
+              Próximas ediciones
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-               Se han creado nuevas aportaciones basadas en este meetup original.
+              Se han creado nuevas aportaciones basadas en este meetup original.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {event.extensions.map(ext => (
@@ -424,8 +533,8 @@ export default function ItemDetailPage() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                       <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{ext.title}</p>
-                       <p className="text-xs text-muted-foreground capitalize">{new Date(ext.dateTime).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+                      <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{ext.title}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{new Date(ext.dateTime).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
                     </div>
                   </div>
                 </Link>
@@ -463,19 +572,21 @@ export default function ItemDetailPage() {
         ) : (
           <>
             {/* Rating Section */}
-            <div className="bg-card rounded-2xl p-8 border border-border shadow-md mb-8 max-w-md mx-auto">
-              <h3 className="font-semibold text-lg mb-6 text-center">Valora este evento</h3>
-              <div className="flex flex-col items-center gap-6">
-                <StarRating value={rating} onChange={setRating} />
-                <Button
-                  onClick={handleRatingSubmit}
-                  disabled={rating === 0}
-                  className="w-full h-14 text-base rounded-xl"
-                >
-                  Enviar valoración
-                </Button>
+            {userJoined && (
+              <div className="bg-card rounded-2xl p-8 border border-border shadow-md mb-8 max-w-md mx-auto">
+                <h3 className="font-semibold text-lg mb-6 text-center">Valora este evento</h3>
+                <div className="flex flex-col items-center gap-6">
+                  <StarRating value={rating} onChange={setRating} />
+                  <Button
+                    onClick={handleRatingSubmit}
+                    disabled={rating === 0}
+                    className="w-full h-14 text-base rounded-xl"
+                  >
+                    Enviar valoración
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
             {isAuthor && (
               <div className="mb-8 md:max-w-md md:mx-auto">
@@ -506,7 +617,7 @@ export default function ItemDetailPage() {
               </span>
             </div>
 
-            {isFinished && (
+            {isFinished && (userJoined || isAuthor) && (
               <div className="mb-6">
                 <input
                   type="file"
@@ -530,10 +641,18 @@ export default function ItemDetailPage() {
               <Masonry columnsCount={2} gutter="16px">
                 {event.userGallery.map((item, index) => {
                   const url = item.url;
+                  const isMyImage = item.user?.clerkId === userId;
+                  const canDelete = isMyImage || isAuthor;
+
+                  // Definir ratios dinámicos basados en el índice para crear un efecto visual variado
+                  const aspectClass = index % 4 === 0 ? "aspect-[16/9]" :
+                    index % 4 === 1 ? "aspect-video" :
+                      index % 4 === 2 ? "aspect-square" :
+                        "aspect-[16/9]";
 
                   return (
                     <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
-                      <div className="relative aspect-video">
+                      <div className={`relative ${aspectClass}`}>
                         <Image
                           src={url}
                           alt={`Subido por ${item.user?.username}`}
@@ -541,6 +660,15 @@ export default function ItemDetailPage() {
                           sizes="(max-width: 768px) 50vw, 33vw"
                           className="object-cover"
                         />
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDeleteMedia(item._id)}
+                            className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive shadow-lg z-10"
+                            title="Eliminar imagen"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       <div className="p-4">
                         <div className="flex items-center justify-between">
@@ -613,6 +741,55 @@ export default function ItemDetailPage() {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">¿Eliminar evento?</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Esta acción no se puede deshacer. Se eliminará el evento, las fotos de la galería y se notificará a los participantes.
+              </p>
+            </div>
+
+            {deleteError && (
+              <div className="mb-6 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm font-medium text-center">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-12"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deletingEvent}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl h-12"
+                onClick={handleDeleteEvent}
+                disabled={deletingEvent}
+              >
+                {deletingEvent ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showParticipantsModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div
@@ -657,6 +834,209 @@ export default function ItemDetailPage() {
                   Aún no hay participantes en este evento.
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modals para unirse/desapuntarse */}
+      {showFinishModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowFinishModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">¿Finalizar evento?</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                ¿Seguro que deseas dar por finalizado este evento? Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-12"
+                onClick={() => setShowFinishModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl h-12"
+                onClick={confirmFinish}
+              >
+                Finalizar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showJoinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowJoinModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 text-primary">
+                <UserPlus className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">¿Apuntarse al evento?</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                ¿Estás seguro de que deseas apuntarte a "{event.title}"? Confirma para unirte.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-12"
+                onClick={() => setShowJoinModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1 rounded-xl h-12"
+                onClick={confirmJoin}
+              >
+                Apuntarme
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowLeaveModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">¿Desapuntarse del evento?</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                ¿Estás seguro de que deseas desapuntarte de "{event.title}"? Podrás volver a apuntarte si aún hay plazas.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-12"
+                onClick={() => setShowLeaveModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl h-12"
+                onClick={confirmLeave}
+              >
+                Desapuntarme
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para valorar */}
+      {showRateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowRateModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 text-primary">
+                <Star className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">¿Valorar evento?</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Vas a valorar este evento con {rating} {rating === 1 ? 'estrella' : 'estrellas'}. ¿Confirmar?
+              </p>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-12"
+                onClick={() => setShowRateModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1 rounded-xl h-12"
+                onClick={confirmRating}
+              >
+                Valorar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast de confirmación de valoración */}
+      {showRateSuccess && (
+        <div className="fixed bottom-24 right-6 left-6 md:left-auto flex items-center gap-3 bg-[#4ade80] text-black border-none rounded-2xl px-6 py-4 shadow-xl z-50 animate-in slide-in-from-bottom-5">
+          <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center">
+            <UserCheck className="w-5 h-5" />
+          </div>
+          <span className="text-sm font-semibold">Evento valorado correctamente. ¡Gracias!</span>
+        </div>
+      )}
+      {/* Modal para borrar imagen de la galería */}
+      {showDeleteMediaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowDeleteMediaModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">¿Eliminar imagen?</h3>
+              <p className="text-muted-foreground mt-2 text-sm">
+                ¿Estás seguro de que deseas eliminar esta imagen de la galería? Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-12"
+                onClick={() => setShowDeleteMediaModal(false)}
+                disabled={isDeletingMedia}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl h-12"
+                onClick={confirmDeleteMedia}
+                disabled={isDeletingMedia}
+              >
+                {isDeletingMedia ? "Eliminando..." : "Eliminar"}
+              </Button>
             </div>
           </div>
         </div>

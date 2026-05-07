@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Bell, UserPlus, Calendar, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useTheme } from "@/context/ThemeContext";
 
 const getNotificationIcon = (type) => {
   switch (type) {
@@ -70,6 +71,8 @@ export function NotificationsPopover() {
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
+  const { theme } = useTheme();
+  const isHighContrast = theme === "high-contrast";
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -142,7 +145,7 @@ export function NotificationsPopover() {
       >
         <Bell className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-primary rounded-full text-white text-xs font-semibold flex items-center justify-center shadow-lg animate-pulse">
+          <span className={`absolute top-1.5 right-1.5 w-5 h-5 bg-primary rounded-full ${isHighContrast ? "text-black" : "text-white"} text-xs font-semibold flex items-center justify-center shadow-lg animate-pulse`}>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -156,7 +159,7 @@ export function NotificationsPopover() {
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-lg">Notificaciones</h3>
                 {unreadCount > 0 && (
-                  <Badge className="bg-primary flex items-center justify-center text-white h-6 px-2.5 rounded-full shadow-sm">
+                  <Badge className={`bg-primary flex items-center justify-center ${isHighContrast ? "text-black" : "text-white"} h-6 px-2.5 rounded-full shadow-sm`}>
                     {unreadCount}
                   </Badge>
                 )}

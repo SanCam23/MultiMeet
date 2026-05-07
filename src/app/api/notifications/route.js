@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import connectToDatabase from "@/lib/mongoose";
 import Notification from "@/models/Notification";
 import User from "@/models/User";
+import Event from "@/models/Event";
 
 /**
  * GET /api/notifications
@@ -21,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 
-    const notifications = await Notification.find({ recipient: user._id })
+    const notifications = await Notification.find({ recipient: user._id, read: false })
       .populate("sender", "name username avatar")
       .populate("event", "title")
       .sort({ createdAt: -1 })

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Settings, MapPin, Loader2, Calendar, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/components/EventCard";
@@ -46,8 +46,9 @@ const mockPastEventsPlaceholder = [
   },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mainTab, setMainTab] = useState("posts");
   const [subTab, setSubTab] = useState("personal");
   const [personalEvents, setPersonalEvents] = useState([]);
@@ -64,6 +65,12 @@ export default function DashboardPage() {
 
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
+
+  useEffect(() => {
+    if (searchParams.get("edit") === "true") {
+      setIsEditProfileOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -389,5 +396,19 @@ export default function DashboardPage() {
         </div>
       </Show>
     </>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

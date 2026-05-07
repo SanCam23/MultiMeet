@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import { EventCard } from "@/components/EventCard";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@clerk/nextjs";
+import { Map, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const HomeMap = dynamic(() => import("@/components/HomeMap"), { ssr: false });
 
 const tabs = [
   { value: "following", label: "Siguiendo" },
@@ -12,11 +17,14 @@ const tabs = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const [activeTab, setActiveTab] = useState("topGlobal");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showMap, setShowMap] = useState(false);
   const [radius, setRadius] = useState(5); // Default 5km
+  const [locationError, setLocationError] = useState(false);
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
@@ -31,6 +39,13 @@ export default function HomePage() {
       if (res.ok) {
         const data = await res.json();
         setEvents(data);
+        setLocationError(false);
+      } else {
+        const data = await res.json();
+        if (data.error === "LOCATION_NOT_SET") {
+          setLocationError(true);
+          setEvents([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -62,7 +77,7 @@ export default function HomePage() {
   };
 
   return (
-    <section aria-label="Eventos">
+    <section aria-label="Eventos" className="relative min-h-screen">
       <div className="w-full mx-auto px-6 md:px-8 lg:px-12 pt-6 pb-8 max-w-[1440px]">
         {/* Tabs */}
         <div className="max-w-2xl mx-auto mb-4" role="tablist" aria-label="Categorías de eventos">
@@ -132,12 +147,40 @@ export default function HomePage() {
               {activeTab === "following"
                 ? "No sigues a nadie o no hay eventos recientes de quienes sigues."
                 : activeTab === "topInCity"
-                  ? "No se han encontrado eventos en tu zona."
+                  ? locationError 
+                    ? (
+                      <div className="flex flex-col items-center gap-4 bg-card p-8 rounded-3xl border border-border shadow-sm max-w-md mx-auto">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                          <MapPin className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-bold text-foreground">Ubicación no definida</h3>
+                        <p className="text-sm">Para ver los eventos más populares en tu ciudad, primero debes configurar tu ubicación en tu perfil.</p>
+                        <button 
+                          onClick={() => router.push("/dashboard?edit=true")}
+                          className="mt-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity"
+                        >
+                          Ir a mi perfil
+                        </button>
+                      </div>
+                    )
+                    : "No se han encontrado eventos en tu zona."
                   : "No se han encontrado eventos."}
             </div>
           )}
         </div>
       </div>
+
+      {/* Floating Map Button */}
+      <button
+        onClick={() => setShowMap(true)}
+        className="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-40 bg-primary text-primary-foreground p-4 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center justify-center"
+        aria-label="Abrir mapa de eventos"
+      >
+        <Map className="w-6 h-6 md:w-7 md:h-7" />
+      </button>
+
+      {/* Map Overlay */}
+      {showMap && <HomeMap events={events} onClose={() => setShowMap(false)} />}
     </section>
   );
 }

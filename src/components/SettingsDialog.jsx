@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { X, Moon, Sun, Contrast, Type } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Moon, Sun, Contrast, Type, LogOut, Settings, User } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useClerk, UserProfile } from "@clerk/nextjs";
 
 export function SettingsDialog({ open, onOpenChange }) {
+  const [activeTab, setActiveTab] = useState("general");
   const { theme, setTheme, largeText, setLargeText } = useTheme();
+  const { signOut } = useClerk();
   const isHighContrast = theme === "high-contrast";
 
   useEffect(() => {
@@ -22,7 +25,7 @@ export function SettingsDialog({ open, onOpenChange }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
@@ -32,23 +35,55 @@ export function SettingsDialog({ open, onOpenChange }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="relative w-full sm:max-w-[525px] bg-card border border-border shadow-2xl rounded-3xl p-0 gap-0 max-h-[90vh] flex flex-col overflow-hidden m-4 animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-[950px] md:max-w-[1000px] h-full max-h-[90vh] sm:max-h-[85vh] bg-card border border-border shadow-2xl rounded-3xl p-0 gap-0 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-border shrink-0 flex items-center justify-between">
-          <h2 id="settings-title" className="text-2xl font-bold">Ajustes</h2>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="p-2 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-            aria-label="Cerrar ajustes"
-          >
-            <X className="w-5 h-5 text-muted-foreground" />
-          </button>
+        <div className="px-6 pt-4 pb-0 border-b border-border shrink-0 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 id="settings-title" className="text-2xl font-bold">Ajustes</h2>
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-2 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Cerrar ajustes"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
+          
+          {/* Tabs */}
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setActiveTab("general")}
+              className={`pb-3 font-medium text-sm transition-colors relative ${activeTab === "general" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                <span>General</span>
+              </div>
+              {activeTab === "general" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("cuenta")}
+              className={`pb-3 font-medium text-sm transition-colors relative ${activeTab === "cuenta" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>Gestión de Cuenta</span>
+              </div>
+              {activeTab === "cuenta" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto flex-1 overscroll-contain px-6 py-5">
-          {/* Theme Section */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          {activeTab === "general" ? (
+            <div className="px-6 py-5">
+              {/* Theme Section */}
           <div className="mb-5">
             <h3 className="font-semibold text-lg mb-1">Apariencia</h3>
             <p className="text-sm text-muted-foreground mb-3">
@@ -200,6 +235,24 @@ export function SettingsDialog({ open, onOpenChange }) {
           {/* Divider */}
           <div className="border-t border-border mt-8 mb-5" />
 
+          {/* Account Section: Sign Out */}
+          <div className="mb-2">
+            <h3 className="font-semibold text-lg mb-1">Cuenta</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Gestiona tu sesión activa
+            </p>
+            <button
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:bg-muted transition-all font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <LogOut className="w-5 h-5" />
+              Cerrar sesión
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border mt-8 mb-5" />
+
           {/* Dangerous Section: Delete Account */}
           <div className="mb-8">
             <h3 className="font-semibold text-lg text-destructive mb-1">Zona peligrosa</h3>
@@ -228,6 +281,21 @@ export function SettingsDialog({ open, onOpenChange }) {
               Eliminar mi cuenta definitivamente
             </button>
           </div>
+            </div>
+          ) : (
+            <div className="w-full flex justify-center py-2 sm:px-4">
+              <UserProfile 
+                routing="hash"
+                appearance={{
+                  elements: {
+                    rootBox: "w-full max-w-full",
+                    cardBox: "w-full shadow-none border-none bg-transparent rounded-none m-0 max-w-full",
+                    navbar: "hidden md:flex", // Hide Clerk's own sidebar on mobile to save space
+                  }
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
