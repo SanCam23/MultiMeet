@@ -366,14 +366,27 @@ export default function ItemDetailPage() {
     <div className="min-h-screen bg-background pb-20">
       {/* Hero Header */}
       <div className="relative h-72 md:h-96 w-full">
-        <Image
-          src={event.coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1080"}
-          alt={event.title || "Evento"}
-          fill
-          sizes="100vw"
-          className="object-cover bg-muted"
-          priority
-        />
+        {event.coverImage && (event.coverImage.split('?')[0].toLowerCase().endsWith('.mp4') || event.coverImage.split('?')[0].toLowerCase().endsWith('.webm')) ? (
+          <video
+            src={event.coverImage}
+            fill
+            className="absolute inset-0 w-full h-full object-cover bg-muted"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+        ) : (
+          <Image
+            src={event.coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1080"}
+            alt={event.title || "Evento"}
+            fill
+            sizes="100vw"
+            className="object-cover bg-muted"
+            priority
+            unoptimized={event.coverImage?.includes("dropbox.com") || event.coverImage?.includes("unsplash.com") || event.coverImage?.includes("images.unsplash.com")}
+          />
+        )}
 
         <button
           onClick={handleBack}
@@ -643,7 +656,7 @@ export default function ItemDetailPage() {
               <div className="mb-6">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   ref={fileInputRef}
                   className="hidden"
                   onChange={handleUploadMedia}
@@ -654,7 +667,7 @@ export default function ItemDetailPage() {
                   className="w-full md:w-auto h-12 rounded-xl border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors"
                 >
                   <Upload className="w-5 h-5 mr-2" />
-                  Añadir fotos
+                  Añadir fotos y vídeos
                 </Button>
               </div>
             )}
@@ -673,14 +686,24 @@ export default function ItemDetailPage() {
                           className="relative cursor-pointer"
                           onClick={() => setSelectedMediaIndex(index)}
                         >
-                          <Image
-                            src={url}
-                            alt={`Subido por ${item.user?.username || item.user?.name || "usuario"}`}
-                            width={600}
-                            height={600}
-                            className="w-full h-auto block hover:opacity-90 transition-opacity"
-                            unoptimized={url.includes("unsplash.com") || url.includes("images.unsplash.com")}
-                          />
+                          {item.type === "video" ? (
+                            <video
+                              src={`${url}#t=0.1`}
+                              className="w-full h-auto block hover:opacity-90 transition-opacity"
+                              preload="metadata"
+                              muted
+                              playsInline
+                            />
+                          ) : (
+                            <Image
+                              src={url}
+                              alt={`Subido por ${item.user?.username || item.user?.name || "usuario"}`}
+                              width={600}
+                              height={600}
+                              className="w-full h-auto block hover:opacity-90 transition-opacity"
+                              unoptimized={url.includes("dropbox.com") || url.includes("unsplash.com") || url.includes("images.unsplash.com")}
+                            />
+                          )}
                           {item.type === "video" && (
                             <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                               <div className="bg-white/90 rounded-full p-3 shadow-md">
@@ -695,7 +718,7 @@ export default function ItemDetailPage() {
                                 handleDeleteMedia(item._id);
                               }}
                               className="absolute top-3 right-3 bg-primary/90 text-primary-foreground p-2 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-primary shadow-lg z-10"
-                              title="Eliminar imagen"
+                              title="Eliminar multimedia"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1050,9 +1073,9 @@ export default function ItemDetailPage() {
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">¿Eliminar imagen?</h3>
+              <h3 className="text-xl font-bold text-foreground">¿Eliminar multimedia?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
-                ¿Estás seguro de que deseas eliminar esta imagen de la galería? Esta acción no se puede deshacer.
+                ¿Estás seguro de que deseas eliminar este elemento de la galería? Esta acción no se puede deshacer.
               </p>
             </div>
             <div className="flex gap-3 mt-8">
@@ -1134,7 +1157,7 @@ export default function ItemDetailPage() {
                   style={{ width: 'auto', height: 'auto' }}
                   className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl border border-border bg-black/5"
                   priority
-                  unoptimized={event.userGallery[selectedMediaIndex].url.includes("unsplash.com") || event.userGallery[selectedMediaIndex].url.includes("images.unsplash.com")}
+                  unoptimized={event.userGallery[selectedMediaIndex].url.includes("dropbox.com") || event.userGallery[selectedMediaIndex].url.includes("unsplash.com") || event.userGallery[selectedMediaIndex].url.includes("images.unsplash.com")}
                 />
               )}
             </div>

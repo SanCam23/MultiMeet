@@ -35,14 +35,14 @@ export async function POST(request, { params }) {
 
     const isFinished = event.status === "finished" || new Date(event.dateTime) < new Date();
     if (!isFinished) {
-      return NextResponse.json({ error: "Solo se pueden añadir fotos a eventos finalizados o que ya han pasado" }, { status: 400 });
+      return NextResponse.json({ error: "Solo se pueden añadir elementos multimedia a eventos finalizados o que ya han pasado" }, { status: 400 });
     }
 
     const isParticipant = event.participants.some(p => p.toString() === user._id.toString());
     const isAuthor = event.author.toString() === user._id.toString();
 
     if (!isParticipant && !isAuthor) {
-      return NextResponse.json({ error: "Solo los participantes o el autor pueden añadir fotos" }, { status: 403 });
+      return NextResponse.json({ error: "Solo los participantes o el autor pueden añadir elementos multimedia" }, { status: 403 });
     }
 
     const memory = {
@@ -108,7 +108,7 @@ export async function DELETE(request, { params }) {
 
     const itemIndex = event.userGallery.findIndex((item) => item._id.toString() === itemId);
     if (itemIndex === -1) {
-      return NextResponse.json({ error: "Imagen no encontrada en la galería" }, { status: 404 });
+      return NextResponse.json({ error: "Elemento no encontrado en la galería" }, { status: 404 });
     }
 
     const item = event.userGallery[itemIndex];
@@ -118,7 +118,7 @@ export async function DELETE(request, { params }) {
     const isAuthor = event.author.toString() === user._id.toString();
 
     if (!isUploader && !isAuthor) {
-      return NextResponse.json({ error: "No tienes permiso para borrar esta imagen" }, { status: 403 });
+      return NextResponse.json({ error: "No tienes permiso para borrar este elemento" }, { status: 403 });
     }
 
     // Intentar borrar de Dropbox (opcional, no bloqueamos si falla)
@@ -135,7 +135,7 @@ export async function DELETE(request, { params }) {
     // Populate user to return it
     await event.populate("userGallery.user", "name username avatar slug");
 
-    return NextResponse.json({ message: "Imagen eliminada", userGallery: event.userGallery }, { status: 200 });
+    return NextResponse.json({ message: "Elemento eliminado", userGallery: event.userGallery }, { status: 200 });
   } catch (error) {
     console.error("DELETE /api/events/[id]/gallery error:", error);
     return NextResponse.json({ error: "Error al eliminar la imagen" }, { status: 500 });

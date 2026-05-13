@@ -46,15 +46,27 @@ export function EventCard({
       <article className="h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-border">
         <div className="relative h-48 shrink-0">
           {displayImage ? (
-            <Image
-              src={displayImage}
-              alt={displayTitle}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover"
-              placeholder="blur"
-              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjIyMjMzIi8+PC9zdmc+"
-            />
+            (displayImage.split('?')[0].toLowerCase().endsWith('.mp4') || displayImage.split('?')[0].toLowerCase().endsWith('.webm')) ? (
+              <video
+                src={displayImage}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <Image
+                src={displayImage}
+                alt={displayTitle}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover"
+                placeholder="blur"
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjIyMjMzIi8+PC9zdmc+"
+                unoptimized={displayImage.includes("dropbox.com") || displayImage.includes("unsplash.com") || displayImage.includes("images.unsplash.com")}
+              />
+            )
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">
               Sin imagen

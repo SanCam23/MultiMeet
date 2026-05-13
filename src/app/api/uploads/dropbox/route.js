@@ -15,17 +15,17 @@ export async function POST(request) {
       );
     }
 
-    if (!file.type?.startsWith("image/")) {
+    if (!file.type?.startsWith("image/") && !file.type?.startsWith("video/")) {
       return NextResponse.json(
-        { error: "El archivo debe ser una imagen" },
+        { error: "El archivo debe ser una imagen o un vídeo" },
         { status: 400 }
       );
     }
 
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = file.type?.startsWith("video/") ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: "La imagen supera el límite de 5MB" },
+        { error: `El archivo supera el límite de ${file.type?.startsWith("video/") ? "100MB" : "10MB"}` },
         { status: 400 }
       );
     }
