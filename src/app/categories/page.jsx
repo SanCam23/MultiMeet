@@ -50,12 +50,15 @@ function mapEventToCard(ev) {
       hour: "2-digit",
       minute: "2-digit",
     }),
+    dateTime: ev.dateTime,
+    status: ev.status,
     location: ev.locationText,
     participants: ev.participantsCount || ev.participants?.length || 0,
     category: ev.categories?.[0] || "Evento",
     isTrending: (ev.participantsCount || 0) >= 50,
   };
 }
+
 
 export default function CategoriesPage() {
   const { isSignedIn } = useAuth();

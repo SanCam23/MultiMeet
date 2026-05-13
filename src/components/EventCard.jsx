@@ -21,6 +21,7 @@ export function EventCard({
   category,
   categories,
   isTrending = false,
+  status,
 }) {
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
@@ -41,9 +42,11 @@ export function EventCard({
     displayTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  const isFinished = status === "finished" || (dateTime && new Date(dateTime) < new Date());
+
   return (
     <Link href={`/item/${id}`} className="block h-full focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
-      <article className="h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-border">
+      <article className={`h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all border ${isHighContrast ? "border-primary border-4" : "border-border"} ${isFinished ? "opacity-75 grayscale-[0.5]" : ""}`}>
         <div className="relative h-48 shrink-0">
           {displayImage ? (
             (displayImage.split('?')[0].toLowerCase().endsWith('.mp4') || displayImage.split('?')[0].toLowerCase().endsWith('.webm')) ? (
@@ -72,7 +75,19 @@ export function EventCard({
               Sin imagen
             </div>
           )}
-          {isTrending && (
+          
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-black/40 pointer-events-none z-0" />
+
+          
+          {/* Status Badge */}
+          {isFinished ? (
+            <div className="absolute top-4 left-4 z-10">
+              <Badge className="bg-destructive text-destructive-foreground px-3 py-1.5 shadow-lg font-bold">
+                FINALIZADO
+              </Badge>
+            </div>
+          ) : isTrending && (
             <div className="absolute top-4 right-4">
               <Badge className="bg-secondary text-secondary-foreground flex items-center gap-1.5 px-3 py-1.5 shadow-lg">
                 <TrendingUp className="w-4 h-4" aria-hidden="true" />
@@ -80,32 +95,37 @@ export function EventCard({
               </Badge>
             </div>
           )}
-          <div className="absolute bottom-4 left-4">
-            <Badge className="bg-accent text-accent-foreground backdrop-blur-sm px-3 py-1.5">
-              {displayCategory}
-            </Badge>
-          </div>
+          
+          {!isFinished && (
+            <div className="absolute bottom-4 left-4">
+              <Badge className="bg-accent text-accent-foreground backdrop-blur-sm px-3 py-1.5">
+                {displayCategory}
+              </Badge>
+            </div>
+          )}
         </div>
         <div className="p-6 flex-1 flex flex-col">
-          <h3 className="font-semibold text-lg mb-4 line-clamp-2">{displayTitle}</h3>
-          <div className="space-y-3 text-sm text-muted-foreground mt-auto">
+          <h3 className={`font-semibold text-lg mb-4 line-clamp-2 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-primary" : theme === "dark" ? "text-white" : "text-primary"}`}>{displayTitle}</h3>
+          <div className={`space-y-3 text-sm mt-auto ${isHighContrast ? "text-white" : "text-muted-foreground"}`}>
             <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-primary" aria-hidden="true" />
+              <Calendar className={`w-5 h-5 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-primary"}`} aria-hidden="true" />
               <span>
                 {displayDate} a las {displayTime}
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <MapPin className={`w-5 h-5 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
+              <MapPin className={`w-5 h-5 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-secondary"}`} aria-hidden="true" />
               <span className="line-clamp-1">{displayLocation}</span>
             </div>
             <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-accent" aria-hidden="true" />
+              <Users className={`w-5 h-5 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-accent"}`} aria-hidden="true" />
               <span>{displayParticipants.toLocaleString()} asistentes</span>
             </div>
           </div>
         </div>
+
       </article>
     </Link>
   );
 }
+

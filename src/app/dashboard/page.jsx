@@ -29,8 +29,10 @@ function mapEventToCard(ev) {
     participants: ev.participantsCount || 0,
     category: ev.categories?.[0] || "Evento",
     dateTime: ev.dateTime,
+    status: ev.status,
   };
 }
+
 
 // Mock data removed in favor of real API data
 const mockPastEventsPlaceholder = [

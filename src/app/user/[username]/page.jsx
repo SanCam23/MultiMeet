@@ -22,8 +22,10 @@ function mapEventToCard(ev) {
     participants: ev.participantsCount || 0,
     category: ev.categories?.[0] || "Evento",
     dateTime: ev.dateTime,
+    status: ev.status,
   };
 }
+
 
 export default function UserProfilePage() {
   const router = useRouter();
