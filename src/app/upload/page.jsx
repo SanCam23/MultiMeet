@@ -156,6 +156,7 @@ export default function UploadPage() {
           location: locationData.address,
           date,
           time,
+          description: description.trim(), // Enviamos la descripción actual si existe
         }),
       });
 
@@ -524,7 +525,7 @@ export default function UploadPage() {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 text-accent" />
-                      Generame la descripción
+                      {description.trim() ? "Mejórame la descripción" : "Generame la descripción"}
                     </>
                   )}
                 </Button>
