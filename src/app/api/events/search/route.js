@@ -84,6 +84,10 @@ export async function GET(request) {
       }
     }
 
+    await connectToDatabase();
+
+    let matchedUsers = [];
+
     if (q) {
       // Escapamos caracteres especiales de regex y creamos un patrón tolerante a tildes
       const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -94,22 +98,39 @@ export async function GET(request) {
         .replace(/[oOóÓòÒöÖôÔ]/g, "[oOóÓòÒöÖôÔ]")
         .replace(/[uUúÚùÙüÜûÛ]/g, "[uUúÚùÙüÜûÛ]");
 
+      // 1. Buscar usuarios que coincidan visualmente con la búsqueda (Estilo Canales de Youtube)
+      matchedUsers = await User.find({
+        $or: [
+          { name: { $regex: flexibleQ, $options: "i" } },
+          { username: { $regex: flexibleQ, $options: "i" } }
+        ]
+      })
+      .select("name username avatar slug")
+      .limit(5);
+
+      // 2. Query de eventos (busca por texto)
       query.$or = [
         { title: { $regex: flexibleQ, $options: "i" } },
         { description: { $regex: flexibleQ, $options: "i" } },
         { locationText: { $regex: flexibleQ, $options: "i" } },
         { categories: { $regex: flexibleQ, $options: "i" } },
       ];
-    }
 
-    await connectToDatabase();
+      // Toque YouTube: Si hemos encontrado usuarios en el Paso 1, forzamos a que también
+      // aparezcan eventos organizados por ellos independientemente del nombre del evento
+      if (matchedUsers.length > 0) {
+        const userIds = matchedUsers.map(u => u._id);
+        query.$or.push({ author: { $in: userIds } });
+      }
+    }
 
     const events = await Event.find(query)
       .populate("author", "name username avatar slug")
       .sort({ dateTime: 1, createdAt: -1 })
       .limit(limit);
 
-    return NextResponse.json(events, { status: 200 });
+    // Devolvemos el resultado estructurado
+    return NextResponse.json({ users: matchedUsers, events }, { status: 200 });
   } catch (error) {
     console.error("GET /api/events/search error:", error);
     return NextResponse.json(
