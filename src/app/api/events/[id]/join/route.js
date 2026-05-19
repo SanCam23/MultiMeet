@@ -25,8 +25,12 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    if (event.status === "finished" || new Date(event.dateTime) < new Date()) {
+    if (event.status === "finished") {
       return NextResponse.json({ error: "El evento ya ha finalizado" }, { status: 400 });
+    }
+
+    if (new Date(event.dateTime) < new Date()) {
+      return NextResponse.json({ error: "El evento ya ha comenzado" }, { status: 400 });
     }
 
     // Toggle participant logic
@@ -41,7 +45,7 @@ export async function POST(request, { params }) {
     }
 
     await event.save();
-    
+
     // Crear notificación si se acaba de unir y no es su propio evento
     if (!isParticipant && event.author.toString() !== user._id.toString()) {
       try {

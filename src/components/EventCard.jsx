@@ -42,7 +42,7 @@ export function EventCard({
     displayTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  const isFinished = status === "finished" || (dateTime && new Date(dateTime) < new Date());
+  const isFinished = status === "finished";
 
   return (
     <Link href={`/item/${id}`} className="block h-full focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl">
@@ -75,11 +75,13 @@ export function EventCard({
               Sin imagen
             </div>
           )}
-          
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-black/40 pointer-events-none z-0" />
 
-          
+          {/* Dark Overlay - Solo para eventos finalizados */}
+          {isFinished && (
+            <div className="absolute inset-0 bg-black/40 pointer-events-none z-0" />
+          )}
+
+
           {/* Status Badge */}
           {isFinished ? (
             <div className="absolute top-4 left-4 z-10">
@@ -95,7 +97,7 @@ export function EventCard({
               </Badge>
             </div>
           )}
-          
+
           {!isFinished && (
             <div className="absolute bottom-4 left-4">
               <Badge className="bg-accent text-accent-foreground backdrop-blur-sm px-3 py-1.5">

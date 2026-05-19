@@ -122,7 +122,7 @@ export default function ItemDetailPage() {
     );
   }
 
-  const isFinished = event.status === "finished" || new Date(event.dateTime) < new Date();
+  const isFinished = event.status === "finished";
   const hasGallery = event.userGallery && event.userGallery.length > 0;
 
   const handleShare = () => {
@@ -682,7 +682,7 @@ export default function ItemDetailPage() {
 
                     return (
                       <div key={index} className="relative rounded-2xl overflow-hidden group shadow-md bg-card border border-border">
-                        <div 
+                        <div
                           className="relative cursor-pointer"
                           onClick={() => setSelectedMediaIndex(index)}
                         >
@@ -1111,7 +1111,7 @@ export default function ItemDetailPage() {
           >
             <X className="w-6 h-6" />
           </button>
-          
+
           {/* Navigation Arrows */}
           {event.userGallery.length > 1 && (
             <>
@@ -1142,15 +1142,15 @@ export default function ItemDetailPage() {
           <div className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center pointer-events-none p-4 md:p-12">
             <div className="relative pointer-events-auto w-full h-full flex items-center justify-center">
               {event.userGallery[selectedMediaIndex].type === "video" ? (
-                <video 
-                  src={event.userGallery[selectedMediaIndex].url} 
-                  controls 
+                <video
+                  src={event.userGallery[selectedMediaIndex].url}
+                  controls
                   autoPlay
                   className="max-h-[75vh] max-w-full rounded-2xl shadow-2xl border border-border bg-black/5"
                 />
               ) : (
-                <Image 
-                  src={event.userGallery[selectedMediaIndex].url} 
+                <Image
+                  src={event.userGallery[selectedMediaIndex].url}
                   alt="Gallery preview"
                   width={1200}
                   height={1200}
@@ -1161,14 +1161,14 @@ export default function ItemDetailPage() {
                 />
               )}
             </div>
-            
+
             {/* User Info Pill */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
               <div className="bg-card/95 backdrop-blur-md border border-border px-6 py-3 rounded-full shadow-xl flex items-center gap-3">
                 {event.userGallery[selectedMediaIndex].user?.imageUrl ? (
-                  <img 
-                    src={event.userGallery[selectedMediaIndex].user.imageUrl} 
-                    alt="Avatar" 
+                  <img
+                    src={event.userGallery[selectedMediaIndex].user.imageUrl}
+                    alt="Avatar"
                     className="w-8 h-8 rounded-full object-cover border border-border"
                   />
                 ) : (
@@ -1223,7 +1223,7 @@ export default function ItemDetailPage() {
                   variant={shareLinkCopied ? "default" : "secondary"}
                   className="rounded-lg h-8 flex-shrink-0"
                 >
-                  {shareLinkCopied ? <span className="flex items-center gap-1"><UserCheck className="w-4 h-4"/> ¡Copiado!</span> : "Copiar"}
+                  {shareLinkCopied ? <span className="flex items-center gap-1"><UserCheck className="w-4 h-4" /> ¡Copiado!</span> : "Copiar"}
                 </Button>
               </div>
             </div>
