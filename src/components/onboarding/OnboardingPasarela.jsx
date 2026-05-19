@@ -233,7 +233,7 @@ export function OnboardingPasarela({ onComplete }) {
                             </>
                         )}
                     </Button>
-                    
+
                     <button
                         onClick={handleSkip}
                         disabled={isSaving}
