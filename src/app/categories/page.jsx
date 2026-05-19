@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/Label";
 import { useTheme } from "@/context/ThemeContext";
 import dynamic from "next/dynamic";
 import { SignInButton, useAuth } from "@clerk/nextjs";
+import Link from "next/link";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
@@ -80,6 +81,7 @@ export default function CategoriesPage() {
   const [appliedMinParticipants, setAppliedMinParticipants] = useState("");
   const [locationPickerKey, setLocationPickerKey] = useState(0);
   const [events, setEvents] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loadingResults, setLoadingResults] = useState(true);
   const [resultsError, setResultsError] = useState("");
   const { theme } = useTheme();
@@ -132,6 +134,7 @@ export default function CategoriesPage() {
       setLoadingResults(false);
       setResultsError("");
       setEvents([]);
+      setUsers([]);
       return;
     }
 
@@ -166,19 +169,20 @@ export default function CategoriesPage() {
           params.set("minParticipants", appliedMinParticipants);
         }
 
-        params.set("limit", "60");
-
+        // Note: Our API returns { users: [...], events: [...] }
         const response = await fetch(`/api/events/search?${params.toString()}`);
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data?.error || "No se pudieron cargar los eventos.");
+          throw new Error(data?.error || "No se pudieron cargar los datos.");
         }
 
-        setEvents(Array.isArray(data) ? data.map(mapEventToCard) : []);
+        setEvents(data.events ? data.events.map(mapEventToCard) : []);
+        setUsers(data.users || []);
       } catch (error) {
-        setResultsError(error.message || "No se pudieron cargar los eventos.");
+        setResultsError(error.message || "No se pudieron cargar los datos.");
         setEvents([]);
+        setUsers([]);
       } finally {
         setLoadingResults(false);
       }
@@ -219,7 +223,7 @@ export default function CategoriesPage() {
       {/* Search Section */}
       <section className="bg-card border-b border-border" aria-label="Buscador de eventos">
         <div className="w-full mx-auto px-6 md:px-8 lg:px-12 py-6 max-w-[1440px]">
-          <h1 className="text-2xl font-bold mb-6">Descubrir Eventos</h1>
+          <h1 className="text-2xl font-bold mb-6">Descubrir Eventos o Personas</h1>
 
           <form onSubmit={handleSearch} className="flex gap-3 max-w-3xl mx-auto lg:mx-0">
             <div className="flex-1 relative">
@@ -253,7 +257,7 @@ export default function CategoriesPage() {
           {/* Filters Panel */}
           {showFilters && (
             <div className="mt-6 p-6 bg-background rounded-2xl border border-border">
-              <h2 className="text-lg font-semibold mb-4">Filtros avanzados</h2>
+              <h2 className="text-lg font-semibold mb-4">Filtros avanzados para eventos</h2>
               <p className="text-sm text-muted-foreground mb-4">Ajusta tu búsqueda con estos filtros</p>
               <div className="space-y-6">
                 <div>
@@ -411,7 +415,7 @@ export default function CategoriesPage() {
             {/* Results header */}
             <div className="flex flex-wrap items-center gap-3 mb-6">
               <h3 className="font-semibold text-lg">
-                {events.length} {events.length === 1 ? "Evento encontrado" : "Eventos encontrados"}
+                {(events.length + users.length) === 1 ? "1 resultado encontrado" : `${events.length + users.length} resultados encontrados`}
               </h3>
               {!hasActiveFilters && (
                 <span className="text-sm text-muted-foreground">Mostrando resultados recientes</span>
@@ -441,22 +445,56 @@ export default function CategoriesPage() {
               )}
             </div>
 
-            {events.length === 0 ? (
+            {events.length === 0 && users.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                   <SearchIcon className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Sin resultados</h3>
                 <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                  No encontramos eventos con los filtros seleccionados. Prueba con otros términos o ajusta las fechas.
+                  No encontramos eventos ni usuarios con los filtros seleccionados. Prueba con otros términos.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8">
-                {events.map((event) => (
-                  <EventCard key={event.id} {...event} />
-                ))}
-              </div>
+              <>
+                {users.length > 0 && (
+                  <div className="mb-10">
+                    <h3 className="font-semibold text-lg mb-4 text-muted-foreground">Perfiles encontrados</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {users.map(user => (
+                        <Link href={`/user/${user.slug || user.username?.replace('@', '') || user._id}`} key={user._id}>
+                          <div className="flex items-center gap-4 bg-card hover:bg-muted/50 transition-colors p-4 rounded-2xl border border-border shadow-sm group">
+                            <div className="w-14 h-14 rounded-full bg-primary flex flex-shrink-0 items-center justify-center text-primary-foreground font-bold text-lg overflow-hidden">
+                              {user.avatar ? (
+                                <img src={user.avatar} className="w-full h-full object-cover" alt={user.name} />
+                              ) : (
+                                user.name?.substring(0,2).toUpperCase()
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{user.name}</p>
+                              <p className="text-sm text-muted-foreground truncate">@{user.username?.replace('@', '')}</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {events.length > 0 && (
+                  <div>
+                    {users.length > 0 && (
+                      <h3 className="font-semibold text-lg mb-4 text-muted-foreground">Eventos</h3>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8">
+                      {events.map((event) => (
+                        <EventCard key={event.id} {...event} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

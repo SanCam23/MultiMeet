@@ -68,7 +68,16 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
       );
-      const data = await response.json();
+      if (!response.ok) throw new Error("Error en geocodificación inversa");
+      
+      const text = await response.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Respuesta inválida de la API del mapa");
+      }
+
       const formattedAddress = data.display_name || `${lat}, ${lng}`;
       setAddress(formattedAddress);
       onChange({ address: formattedAddress, lat, lng });
@@ -90,10 +99,20 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=jsonv2&limit=5&addressdetails=1`
       );
-      const data = await response.json();
+      if (!response.ok) throw new Error("Error en la búsqueda del mapa");
+
+      const text = await response.text();
+      let data = [];
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Respuesta inválida de la API del mapa");
+      }
+
       setSuggestions(data || []);
     } catch (err) {
-      console.error("Error searching address:", err);
+      // Usamos console.warn en lugar de error para que Next.js no salte el error overlay completo
+      console.warn("Aviso al buscar dirección (posible límite de peticiones):", err);
     } finally {
       setSearching(false);
     }
