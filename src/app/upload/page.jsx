@@ -56,6 +56,34 @@ export default function UploadPage() {
 
   const [parentEventId, setParentEventId] = useState("");
   const [myEvents, setMyEvents] = useState([]);
+  const [overrideLocation, setOverrideLocation] = useState(false);
+  const [editionNumber, setEditionNumber] = useState(null);
+  const [parentEventDetails, setParentEventDetails] = useState(null);
+
+  useEffect(() => {
+    if (parentEventId) {
+      fetch(`/api/events/${parentEventId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && !data.error) {
+            setParentEventDetails(data);
+            const count = Array.isArray(data.extensions) ? data.extensions.length : 0;
+            setEditionNumber(count + 2);
+          } else {
+            setParentEventDetails(null);
+            setEditionNumber(null);
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          setParentEventDetails(null);
+          setEditionNumber(null);
+        });
+    } else {
+      setParentEventDetails(null);
+      setEditionNumber(null);
+    }
+  }, [parentEventId]);
 
   useEffect(() => {
     if (formType === "extend" && myEvents.length === 0) {
@@ -138,26 +166,59 @@ export default function UploadPage() {
     setSubmitError("");
     setSubmitSuccess("");
 
-    if (!title.trim() || selectedCategories.length === 0 || !locationData.address.trim() || !date || !time) {
-      setModalMessage("Debes completar el título, la ubicación, la fecha y la hora para que podamos generar tu descripción");
-      setShowModal(true);
-      return;
+    const isExtend = formType === "extend";
+
+    if (isExtend) {
+      if (!parentEventId) {
+        setModalMessage("Debes seleccionar el evento original para ampliar antes de generar la descripción.");
+        setShowModal(true);
+        return;
+      }
+      if (!title.trim() || !date || !time) {
+        setModalMessage("Debes completar la aportación (título), la fecha y la hora de la ampliación para generar tu descripción.");
+        setShowModal(true);
+        return;
+      }
+      if (overrideLocation && !locationData.address.trim()) {
+        setModalMessage("Has marcado la opción de cambiar ubicación; debes seleccionar la nueva ubicación en el mapa antes de generar la descripción.");
+        setShowModal(true);
+        return;
+      }
+    } else {
+      if (!title.trim() || selectedCategories.length === 0 || !locationData.address.trim() || !date || !time) {
+        setModalMessage("Debes completar el título, la ubicación, la fecha y la hora para que podamos generar tu descripción");
+        setShowModal(true);
+        return;
+      }
     }
 
     try {
       setIsGenerating(true);
 
+      const payload = {
+        title,
+        date,
+        time,
+        description: description.trim(),
+      };
+
+      if (isExtend) {
+        payload.isExtension = true;
+        payload.edition = editionNumber || 2;
+        payload.parentTitle = parentEventDetails?.title || "";
+        payload.categories = parentEventDetails?.categories || [];
+        payload.location = overrideLocation ? locationData.address : (parentEventDetails?.locationText || "");
+        payload.isNewLocation = overrideLocation;
+      } else {
+        payload.isExtension = false;
+        payload.categories = selectedCategories;
+        payload.location = locationData.address;
+      }
+
       const response = await fetch("/api/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          categories: selectedCategories,
-          location: locationData.address,
-          date,
-          time,
-          description: description.trim(), // Enviamos la descripción actual si existe
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -193,7 +254,7 @@ export default function UploadPage() {
       return;
     }
 
-    if (!isExtend && !locationData.address.trim()) {
+    if ((!isExtend || overrideLocation) && !locationData.address.trim()) {
       setSubmitError("Selecciona una ubicación.");
       return;
     }
@@ -247,6 +308,11 @@ export default function UploadPage() {
         payload.maxParticipants = maxParticipants ? Number(maxParticipants) : undefined;
       } else {
         payload.parentEventId = parentEventId;
+        if (overrideLocation) {
+          payload.locationText = locationData.address;
+          payload.lat = locationData.lat;
+          payload.lng = locationData.lng;
+        }
       }
 
       const response = await fetch("/api/events", {
@@ -267,6 +333,10 @@ export default function UploadPage() {
       setTitle("");
       setDescription("");
       setLocationData({ address: "", lat: null, lng: null });
+      setOverrideLocation(false);
+      setEditionNumber(null);
+      setParentEventDetails(null);
+      setParentEventId("");
       setDate("");
       setTime("");
       setMaxParticipants("");
@@ -304,10 +374,14 @@ export default function UploadPage() {
               <button
                 role="tab"
                 aria-selected={formType === "new"}
-                onClick={() => setFormType("new")}
+                onClick={() => {
+                  setFormType("new");
+                  setOverrideLocation(false);
+                  setParentEventId("");
+                }}
                 className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${formType === "new"
-                    ? `bg-primary ${isHighContrast ? "text-black" : "text-white"} shadow-sm`
-                    : "text-muted-foreground hover:text-foreground"
+                  ? `bg-primary ${isHighContrast ? "text-black" : "text-white"} shadow-sm`
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 Nuevo Meetup
@@ -315,10 +389,13 @@ export default function UploadPage() {
               <button
                 role="tab"
                 aria-selected={formType === "extend"}
-                onClick={() => setFormType("extend")}
+                onClick={() => {
+                  setFormType("extend");
+                  setOverrideLocation(false);
+                }}
                 className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${formType === "extend"
-                    ? `bg-primary ${isHighContrast ? "text-black" : "text-white"} shadow-sm`
-                    : "text-muted-foreground hover:text-foreground"
+                  ? `bg-primary ${isHighContrast ? "text-black" : "text-white"} shadow-sm`
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 Ampliar Evento
@@ -331,8 +408,8 @@ export default function UploadPage() {
               {(submitError || submitSuccess) && (
                 <div
                   className={`rounded-xl border px-4 py-3 text-sm ${submitError
-                      ? "border-destructive/30 bg-destructive/10 text-destructive"
-                      : "border-green-600/30 bg-green-600/10 text-green-700"
+                    ? "border-destructive/30 bg-destructive/10 text-destructive"
+                    : "border-green-600/30 bg-green-600/10 text-green-700"
                     }`}
                 >
                   {submitError || submitSuccess}
@@ -424,8 +501,8 @@ export default function UploadPage() {
                       type="button"
                       onClick={() => toggleCategory(category)}
                       className={`inline-flex px-4 py-2 rounded-full text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-ring transition-colors border ${selectedCategories.includes(category)
-                          ? "bg-accent text-accent-foreground border-accent hover:bg-accent/90"
-                          : "bg-transparent text-foreground border-input hover:border-accent"
+                        ? "bg-accent text-accent-foreground border-accent hover:bg-accent/90"
+                        : "bg-transparent text-foreground border-input hover:border-accent"
                         }`}
                     >
                       {category}
@@ -545,8 +622,8 @@ export default function UploadPage() {
               {(submitError || submitSuccess) && (
                 <div
                   className={`rounded-xl border px-4 py-3 text-sm ${submitError
-                      ? "border-destructive/30 bg-destructive/10 text-destructive"
-                      : "border-green-600/30 bg-green-600/10 text-green-700"
+                    ? "border-destructive/30 bg-destructive/10 text-destructive"
+                    : "border-green-600/30 bg-green-600/10 text-green-700"
                     }`}
                 >
                   {submitError || submitSuccess}
@@ -570,11 +647,16 @@ export default function UploadPage() {
                     </option>
                   ))}
                 </select>
+                {editionNumber && (
+                  <p className="mt-2 text-xs font-semibold text-accent animate-pulse">
+                    ✨ Esta ampliación se registrará como la {editionNumber}ª edición del meetup.
+                  </p>
+                )}
               </div>
 
               {/* Extension Details */}
               <div>
-                <Label htmlFor="extensionTitle" className="mb-3 block">Tu aportación</Label>
+                <Label htmlFor="extensionTitle" className="mb-3 block">Título para esta edición</Label>
                 <Input
                   id="extensionTitle"
                   placeholder="¿Qué añades a este evento?"
@@ -595,6 +677,64 @@ export default function UploadPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   required
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGenerateDescription}
+                  disabled={isGenerating}
+                  className="mt-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all flex items-center gap-2 font-medium disabled:opacity-60"
+                >
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-accent" />
+                      {description.trim() ? "Mejórame la descripción" : "Generame la descripción"}
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Optional Location Override */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    id="overrideLocation"
+                    type="checkbox"
+                    checked={overrideLocation}
+                    onChange={(e) => {
+                      setOverrideLocation(e.target.checked);
+                      if (!e.target.checked) {
+                        setLocationData({ address: "", lat: null, lng: null });
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-input text-primary focus:ring-primary focus:ring-2 focus:ring-offset-2 accent-primary cursor-pointer"
+                  />
+                  <Label htmlFor="overrideLocation" className="cursor-pointer select-none font-medium text-sm flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-secondary animate-pulse" aria-hidden="true" />
+                    Elegir otra ubicación para esta ampliación
+                  </Label>
+                </div>
+
+                {overrideLocation && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                    <LocationPicker
+                      value={locationData.address}
+                      lat={locationData.lat}
+                      lng={locationData.lng}
+                      onChange={({ address, lat, lng }) => {
+                        setLocationData({ address, lat, lng });
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Date & Time for Extension */}
