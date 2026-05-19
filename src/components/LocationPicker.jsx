@@ -69,7 +69,7 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
         `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
       );
       if (!response.ok) throw new Error("Error en geocodificación inversa");
-      
+
       const text = await response.text();
       let data = {};
       try {
@@ -122,7 +122,7 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
     const newLat = parseFloat(item.lat);
     const newLng = parseFloat(item.lon);
     const selectedAddress = item.display_name;
-    
+
     setPosition([newLat, newLng]);
     setAddress(selectedAddress);
     setSuggestions([]);
@@ -149,7 +149,10 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
         reverseGeocode(latitude, longitude);
       },
       (err) => {
-        console.error("Error getting location:", err);
+        // Silenciar error en consola si el usuario rechaza el permiso pero notificar que ya no se está cargando
+        if (err.code !== err.PERMISSION_DENIED) {
+          console.error("Error getting location:", err);
+        }
         setLoading(false);
       }
     );
@@ -217,17 +220,17 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
           <MapEvents onChange={handleMapClick} />
           <ChangeView center={position} />
         </MapContainer>
-        
+
         {/* Overlay pulse when loading */}
         {loading && (
           <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px] z-[1000] flex items-center justify-center pointer-events-none">
-             <div className="bg-card/80 p-3 rounded-full shadow-lg">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-             </div>
+            <div className="bg-card/80 p-3 rounded-full shadow-lg">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
           </div>
         )}
       </div>
-      
+
       <p className="text-[10px] text-muted-foreground flex items-center gap-1 px-1">
         <MapPin className="w-3 h-3 text-primary" />
         Haz clic en el mapa para ajustar tu posición exacta

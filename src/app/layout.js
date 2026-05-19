@@ -35,8 +35,9 @@ export default function RootLayout({ children }) {
       <body className="antialiased">
         <ClerkProvider localization={esES}>
           <ThemeProvider>
-            <UserSync />
-            <ClientLayout>{children}</ClientLayout>
+            <UserSync>
+              <ClientLayout>{children}</ClientLayout>
+            </UserSync>
           </ThemeProvider>
         </ClerkProvider>
       </body>

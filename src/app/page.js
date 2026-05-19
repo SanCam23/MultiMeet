@@ -11,8 +11,8 @@ import dynamic from "next/dynamic";
 const HomeMap = dynamic(() => import("@/components/HomeMap"), { ssr: false });
 
 const tabs = [
-  { value: "following", label: "Siguiendo" },
   { value: "topInCity", label: "Top Ciudad" },
+  { value: "following", label: "Siguiendo" },
   { value: "topGlobal", label: "Top Global" },
 ];
 
@@ -57,7 +57,7 @@ export default function HomePage() {
   // Wait for auth to be resolved before setting the tab and fetching
   useEffect(() => {
     if (!authLoaded) return;
-    const defaultTab = isSignedIn ? "following" : "topGlobal";
+    const defaultTab = isSignedIn ? "topInCity" : "topGlobal";
     setActiveTab(defaultTab);
     fetchEvents(defaultTab, radius);
   }, [authLoaded, isSignedIn]);
@@ -66,7 +66,19 @@ export default function HomePage() {
   useEffect(() => {
     if (!authLoaded) return;
     fetchEvents(activeTab, radius);
-  }, [activeTab]);
+  }, [activeTab, radius]); // Añadido radius para mayor seguridad, aunque activeTab es el trigger principal
+
+  // Escuchar cambios en la ubicación del perfil (para corregir el lag post-onboarding)
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      if (activeTab === "topInCity") {
+        fetchEvents("topInCity", radius);
+      }
+    };
+
+    window.addEventListener("profileUpdated", handleProfileUpdate);
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
+  }, [activeTab, radius]);
 
   const handleRadiusChange = (e) => {
     const newRadius = parseInt(e.target.value);
@@ -147,7 +159,7 @@ export default function HomePage() {
               {activeTab === "following"
                 ? "No sigues a nadie o no hay eventos recientes de quienes sigues."
                 : activeTab === "topInCity"
-                  ? locationError 
+                  ? locationError
                     ? (
                       <div className="flex flex-col items-center gap-4 bg-card p-8 rounded-3xl border border-border shadow-sm max-w-md mx-auto">
                         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
@@ -155,7 +167,7 @@ export default function HomePage() {
                         </div>
                         <h3 className="text-xl font-bold text-foreground">Ubicación no definida</h3>
                         <p className="text-sm">Para ver los eventos más populares en tu ciudad, primero debes configurar tu ubicación en tu perfil.</p>
-                        <button 
+                        <button
                           onClick={() => router.push("/dashboard?edit=true")}
                           className="mt-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity"
                         >

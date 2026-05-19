@@ -22,7 +22,7 @@ export async function GET() {
     // UPSERT: Si el usuario existe en Clerk pero todavía no en nuestra BD de Mongo, lo creamos/sincronizamos
     if (!user) {
       const clerkUser = await currentUser();
-      
+
       if (!clerkUser) {
         return NextResponse.json({ message: "Error al obtener datos de Clerk" }, { status: 500 });
       }
@@ -70,17 +70,17 @@ export async function GET() {
           .map(u => (u._id || u).toString());
 
         // Obtenemos solo los IDs que REALMENTE existen en la colección
-        const validUsersInDB = await User.find({ 
-          _id: { $in: allAssociatedIds } 
+        const validUsersInDB = await User.find({
+          _id: { $in: allAssociatedIds }
         }).select("_id");
-        
+
         const validIdsStrings = validUsersInDB.map(u => u._id.toString());
-        
+
         const filteredFollowing = user.following.filter(u => {
           const id = (u._id || u).toString();
           return validIdsStrings.includes(id);
         });
-        
+
         const filteredFollowers = user.followers.filter(u => {
           const id = (u._id || u).toString();
           return validIdsStrings.includes(id);
@@ -124,7 +124,7 @@ export async function PUT(request) {
     try {
       // Limpiamos el username para Clerk
       const cleanUsername = username?.startsWith("@") ? username.slice(1) : username;
-      
+
       const updateData = {
         firstName,
         lastName,
@@ -164,6 +164,42 @@ export async function PUT(request) {
   }
 }
 
+export async function PATCH(request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
+
+    const updates = await request.json();
+    await connectToDatabase();
+
+    const allowedUpdates = ["location", "lat", "lng", "preferences", "onboardingCompleted"];
+    const filteredUpdates = {};
+
+    for (const key of allowedUpdates) {
+      if (updates[key] !== undefined) {
+        filteredUpdates[key] = updates[key];
+      }
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { clerkId: userId },
+      { $set: filteredUpdates },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json(updatedUser, { status: 200 });
+  } catch (error) {
+    console.error("Error al actualizar perfil parcial:", error);
+    return NextResponse.json({ message: "Error al actualizar perfil" }, { status: 500 });
+  }
+}
+
 export async function DELETE() {
   try {
     const { userId } = await auth();
@@ -177,15 +213,15 @@ export async function DELETE() {
 
     // 1. Obtener ID y limpiar las referencias en otros usuarios (Seguidores/Siguiendo)
     const userToDelete = await User.findOne({ clerkId: userId });
-    
+
     if (userToDelete) {
       const mongoId = userToDelete._id;
       // Eliminamos rastro de este usuario en las listas de seguimiento de todos los demás
       await User.updateMany(
-        {}, 
+        {},
         { $pull: { followers: mongoId, following: mongoId } }
       );
-      
+
       // Eliminar el documento del usuario
       await User.findByIdAndDelete(mongoId);
       console.log(`Usuario ${userId} (${mongoId}) y sus referencias eliminados de MongoDB.`);
