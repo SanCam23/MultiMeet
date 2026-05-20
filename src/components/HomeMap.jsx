@@ -68,21 +68,29 @@ export default function HomeMap({ events, onClose }) {
               // Extract image (fallback if needed)
               const imageUrl = event.coverImage || event.image || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80";
               
-              // Create custom icon using L.divIcon to allow HTML/CSS styling
+              // Create custom icon using L.divIcon to allow HTML/CSS styling and full keyboard accessibility
+              const escapedTitle = (event.title || "").replace(/"/g, '&quot;');
               const customIcon = L.divIcon({
                 className: "custom-event-marker",
-                html: `<div style="
-                  width: 56px; 
-                  height: 56px; 
-                  border-radius: 12px; 
-                  overflow: hidden; 
-                  border: 3px solid white; 
-                  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-                  background-image: url('${imageUrl}');
-                  background-size: cover;
-                  background-position: center;
-                  transition: transform 0.2s;
-                "></div>`,
+                html: `<div 
+                  role="button" 
+                  tabindex="0" 
+                  aria-label="Marcador interactivo del evento: ${escapedTitle}"
+                  onkeydown="if(event.key === 'Enter' || event.key === ' ') { this.click(); event.preventDefault(); }"
+                  style="
+                    width: 56px; 
+                    height: 56px; 
+                    border-radius: 12px; 
+                    overflow: hidden; 
+                    border: 3px solid white; 
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+                    background-image: url('${imageUrl}');
+                    background-size: cover;
+                    background-position: center;
+                    transition: transform 0.2s;
+                    cursor: pointer;
+                  "
+                ></div>`,
                 iconSize: [56, 56],
                 iconAnchor: [28, 28],
                 popupAnchor: [0, -28]
