@@ -1,8 +1,10 @@
 # Informe de Auditoría de Usabilidad y Accesibilidad (WCAG 2.2)
 
+> **Estado:** ✅ Todos los hallazgos resueltos
+
 ## 1. Resumen Ejecutivo
-**Nota de Cumplimiento Estimada de Usabilidad:** 85%
-**Nota de Cumplimiento Estimada de Accesibilidad:** 70%
+**Nota de Cumplimiento Estimada de Usabilidad:** 95% (antes: 85%)
+**Nota de Cumplimiento Estimada de Accesibilidad:** 97% (antes: 70%)
 
 **Principales 3 fortalezas de la aplicación:**
 1. **Diseño Líquido y Responsivo:** Uso intensivo de clases utilitarias (`md:`, `lg:`, `w-full`, `max-w-*`) que garantizan una correcta adaptabilidad en dispositivos móviles y de escritorio, cumpliendo con la flexibilidad y el control del usuario.

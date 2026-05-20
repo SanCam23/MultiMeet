@@ -202,7 +202,7 @@ export function NotificationsPopover() {
                       <div className="flex-shrink-0">
                         {notification.sender?.avatar ? (
                           <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-background ring-transparent hover:ring-primary/20 transition-all">
-                             <img src={notification.sender.avatar} alt="" className="w-full h-full object-cover" />
+                             <img src={notification.sender.avatar} className="w-full h-full object-cover" alt={`Avatar de ${notification.sender?.name || "usuario"}`} />
                           </div>
                         ) : (
                           <div className={`w-11 h-11 rounded-full flex items-center justify-center shadow-sm ${getNotificationColor(notification.type)}`}>

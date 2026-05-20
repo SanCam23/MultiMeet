@@ -25,6 +25,7 @@ export function StarRating({ value = 0, onChange, readonly = false }) {
             onMouseLeave={() => !readonly && setHoverValue(0)}
             disabled={readonly}
             className={`${readonly ? "cursor-default" : "cursor-pointer"} transition-colors`}
+            aria-label={`${star} estrella${star > 1 ? "s" : ""}`}
           >
             <Star
               className={`w-8 h-8 ${

@@ -5,6 +5,7 @@ import { X, UserX, UserMinus, Loader2 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 /**
  * Dialog to show lists of followers or people you follow.
@@ -19,6 +20,8 @@ export function FollowsDialog({ open, onOpenChange, type, list = [], onRefresh, 
   const { theme } = useTheme();
   const [loadingId, setLoadingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [actionError, setActionError] = useState("");
+  const trapRef = useFocusTrap(open, () => onOpenChange(false));
 
   if (!open) return null;
 
@@ -44,10 +47,11 @@ export function FollowsDialog({ open, onOpenChange, type, list = [], onRefresh, 
         if (onRefresh) await onRefresh();
       } else {
         const error = await res.json();
-        alert(error.message || "Algo salió mal.");
+        setActionError(error.message || "Algo salió mal. Inténtalo de nuevo.");
       }
     } catch (error) {
       console.error("Error updating following/followers:", error);
+      setActionError("Error de conexión. Inténtalo de nuevo.");
     } finally {
       setLoadingId(null);
     }
@@ -58,27 +62,42 @@ export function FollowsDialog({ open, onOpenChange, type, list = [], onRefresh, 
       <div 
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
+        aria-hidden="true"
       />
       
       <div 
+        ref={trapRef}
         role="dialog" 
+        aria-modal="true"
+        aria-labelledby="follows-dialog-title"
         className="relative w-full max-w-[450px] bg-card border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col m-4 max-h-[80vh] animate-in fade-in zoom-in-95 duration-200"
       >
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0 bg-card">
-          <h2 className="text-xl font-bold">{title}</h2>
+          <h2 id="follows-dialog-title" className="text-xl font-bold">{title}</h2>
           <button
             onClick={() => onOpenChange(false)}
-            className="p-2 rounded-full hover:bg-muted/50 transition-colors"
+            className="p-2 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label="Cerrar"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-4 border-b border-border bg-muted/10 shrink-0">
+          {actionError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mb-3 px-4 py-2 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm text-center"
+            >
+              {actionError}
+            </div>
+          )}
           <div className="relative">
             <input
               type="text"
               placeholder="Buscar por nombre o usuario..."
+              aria-label="Buscar seguidores"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-10 px-4 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"

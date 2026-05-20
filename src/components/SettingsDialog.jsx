@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { X, Moon, Sun, Contrast, Type, LogOut, Settings, User } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useClerk, UserProfile } from "@clerk/nextjs";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export function SettingsDialog({ open, onOpenChange }) {
   const [activeTab, setActiveTab] = useState("general");
   const { theme, setTheme, largeText, setLargeText } = useTheme();
   const { signOut } = useClerk();
   const isHighContrast = theme === "high-contrast";
+  const trapRef = useFocusTrap(open, () => onOpenChange(false));
 
   useEffect(() => {
     if (open) {
@@ -32,6 +34,7 @@ export function SettingsDialog({ open, onOpenChange }) {
         aria-hidden="true"
       />
       <div
+        ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
