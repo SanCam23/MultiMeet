@@ -129,8 +129,12 @@ export function OnboardingPasarela({ onComplete }) {
         <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-6 overflow-y-auto">
             <div className="max-w-md w-full space-y-8 py-8 animate-in fade-in zoom-in duration-300">
                 <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary">
-                        <Icon className="w-8 h-8" />
+                    <div className={`w-16 h-16 rounded-3xl flex items-center justify-center overflow-hidden ${step.id === "welcome" ? "" : "bg-primary/10 text-primary"}`}>
+                        {step.id === "welcome" ? (
+                            <img src="/logo.png" alt="MultiMeet Logo" className="w-16 h-16 object-contain" />
+                        ) : (
+                            <Icon className="w-8 h-8" />
+                        )}
                     </div>
                     <div className="space-y-2">
                         <h1 className="text-3xl font-bold tracking-tight">{step.title}</h1>
@@ -142,7 +146,7 @@ export function OnboardingPasarela({ onComplete }) {
                     {step.id === "welcome" && (
                         <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
                             <p className="text-sm italic leading-relaxed">
-                                "MultiMeet nació para conectar comunidades locales. Ayúdanos a mostrarte lo que realmente te importa configurando estas opciones básicas."
+                                MultiMeet nació para que juntarnos sea más fácil que nunca. Vamos a ayudarte a tener todo listo en menos de 1 minuto.
                             </p>
                         </div>
                     )}
