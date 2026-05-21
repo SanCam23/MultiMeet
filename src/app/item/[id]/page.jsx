@@ -81,28 +81,29 @@ export default function ItemDetailPage() {
     }
   }, [isLoaded, userId, router, openSignIn]);
 
-  useEffect(() => {
+  const fetchEventDetails = async () => {
     if (!urlId) return;
-    fetch(`/api/events/${urlId}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Not found");
-        return res.json();
-      })
-      .then(data => {
-        setEvent(data);
-        if (userId) {
-          setIsAuthor(data.author?.clerkId === userId);
-          setUserJoined(data.participants?.some(p => p.clerkId === userId) || false);
+    try {
+      const res = await fetch(`/api/events/${urlId}`);
+      if (!res.ok) throw new Error("Not found");
+      const data = await res.json();
+      setEvent(data);
+      if (userId) {
+        setIsAuthor(data.author?.clerkId === userId);
+        setUserJoined(data.participants?.some(p => p.clerkId === userId) || false);
 
-          const myRating = data.ratings?.find(r => r.user?.clerkId === userId);
-          if (myRating) setRating(myRating.value);
-        }
-        setLoading(false);
-      })
-      .catch((e) => {
-        console.error(e);
-        setLoading(false);
-      });
+        const myRating = data.ratings?.find(r => r.user?.clerkId === userId);
+        if (myRating) setRating(myRating.value);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEventDetails();
   }, [urlId, userId]);
 
   if (!isLoaded || (isLoaded && !userId)) {
@@ -324,6 +325,7 @@ export default function ItemDetailPage() {
       if (res.ok) {
         setShowRateModal(false);
         setShowRateSuccess(true);
+        await fetchEventDetails();
         setTimeout(() => setShowRateSuccess(false), 3000);
       }
     } catch (e) {
@@ -372,6 +374,10 @@ export default function ItemDetailPage() {
     }
     return "";
   };
+
+  const ratingsCount = event?.ratings?.length || 0;
+  const ratingsSum = event?.ratings?.reduce((sum, r) => sum + r.value, 0) || 0;
+  const averageRating = ratingsCount > 0 ? (ratingsSum / ratingsCount).toFixed(1) : null;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -510,6 +516,43 @@ export default function ItemDetailPage() {
               <p className="text-sm text-muted-foreground">{event.locationText}</p>
             </div>
           </div>
+
+          {isFinished && (
+            <div className="flex items-start gap-4 pt-2 border-t border-border/50">
+              <Star className="w-6 h-6 text-yellow-500 mt-0.5 flex-shrink-0 fill-yellow-500" />
+              <div>
+                <p className="font-semibold mb-1">Valoración media</p>
+                <div className="text-sm text-muted-foreground">
+                  {averageRating ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg font-bold text-foreground">{averageRating}</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const ratingVal = parseFloat(averageRating);
+                          const isFilled = star <= Math.round(ratingVal);
+                          return (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${
+                                isFilled
+                                  ? "text-yellow-500 fill-yellow-500"
+                                  : "text-muted-foreground/30 fill-transparent"
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        ({ratingsCount} {ratingsCount === 1 ? "valoración" : "valoraciones"})
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="italic">Este evento aún no tiene valoraciones</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="h-40 md:h-48 bg-muted rounded-xl overflow-hidden relative group">
             {event.lat && event.lng ? (
