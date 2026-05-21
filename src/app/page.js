@@ -28,6 +28,19 @@ export default function HomePage() {
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
+  // Cargar el radio de búsqueda guardado en localStorage al montar el componente
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("searchRadius");
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) {
+          setRadius(parsed);
+        }
+      }
+    }
+  }, []);
+
   async function fetchEvents(tab, r) {
     try {
       setLoading(true);
@@ -83,6 +96,9 @@ export default function HomePage() {
   const handleRadiusChange = (e) => {
     const newRadius = parseInt(e.target.value);
     setRadius(newRadius);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("searchRadius", newRadius);
+    }
     if (activeTab === "topInCity") {
       fetchEvents(activeTab, newRadius);
     }
