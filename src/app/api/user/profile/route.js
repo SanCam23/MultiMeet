@@ -174,12 +174,25 @@ export async function PATCH(request) {
     const updates = await request.json();
     await connectToDatabase();
 
-    const allowedUpdates = ["location", "lat", "lng", "preferences", "onboardingCompleted"];
+    const allowedUpdates = ["username", "location", "lat", "lng", "preferences", "onboardingCompleted"];
     const filteredUpdates = {};
 
     for (const key of allowedUpdates) {
       if (updates[key] !== undefined) {
         filteredUpdates[key] = updates[key];
+      }
+    }
+
+    // Si se actualiza username, sincronizar con Clerk también
+    if (updates.username) {
+      const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+      try {
+        const cleanUsername = updates.username.startsWith("@") ? updates.username.slice(1) : updates.username;
+        const clerkUsername = cleanUsername.toLowerCase().trim().replace(/\s+/g, '-');
+        await clerk.users.updateUser(userId, { username: clerkUsername });
+        console.log("Clerk Username Sync exitoso en PATCH:", clerkUsername);
+      } catch (clerkError) {
+        console.warn("Aviso: Sincronización con Clerk fallida para username en PATCH:", clerkError.message);
       }
     }
 

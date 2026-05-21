@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { MapPin, Sun, Moon, Eye, Type, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import { MapPin, Sun, Moon, Eye, Type, ChevronRight, Loader2, Sparkles, User } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
@@ -19,6 +19,12 @@ const steps = [
         title: "¡Bienvenido a MultiMeet!",
         description: "Estamos encantados de tenerte aquí. Vamos a configurar tu experiencia en unos pocos pasos.",
         icon: Sparkles,
+    },
+    {
+        id: "username",
+        title: "Elige tu nombre de usuario",
+        description: "MultiMeet te identificará con este nombre único para que tus amigos puedan encontrarte.",
+        icon: User,
     },
     {
         id: "location",
@@ -50,9 +56,81 @@ export function OnboardingPasarela({ onComplete }) {
         lat: null,
         lng: null,
     });
+    const [username, setUsername] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+    const [currentUserProfile, setCurrentUserProfile] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    const nextStep = () => {
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await fetch("/api/user/profile");
+                if (response.ok) {
+                    const data = await response.json();
+                    setCurrentUserProfile(data);
+                    if (data.username) {
+                        setUsername(data.username.startsWith("@") ? data.username.slice(1) : data.username);
+                    } else if (data.name) {
+                        const suggested = data.name.toLowerCase().trim()
+                            .replace(/[^a-z0-9_-]/g, "")
+                            .slice(0, 15);
+                        setUsername(suggested);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching profile in onboarding:", error);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const validateUsername = async (value) => {
+        if (!value || value.trim().length === 0) {
+            setUsernameError("El nombre de usuario no puede estar vacío.");
+            return false;
+        }
+        if (value.length < 3) {
+            setUsernameError("El nombre de usuario debe tener al menos 3 caracteres.");
+            return false;
+        }
+        if (value.length > 20) {
+            setUsernameError("El nombre de usuario no puede tener más de 20 caracteres.");
+            return false;
+        }
+        
+        setIsCheckingUsername(true);
+        try {
+            const response = await fetch(`/api/user/username/${value}`);
+            if (response.ok) {
+                const foundUser = await response.json();
+                if (currentUserProfile && foundUser._id === currentUserProfile._id) {
+                    return true;
+                }
+                setUsernameError("Este nombre de usuario ya está en uso.");
+                return false;
+            } else if (response.status === 404) {
+                return true;
+            } else {
+                setUsernameError("Error al verificar la disponibilidad. Inténtalo de nuevo.");
+                return false;
+            }
+        } catch (error) {
+            console.error("Error al verificar nombre de usuario:", error);
+            setUsernameError("Error al verificar la disponibilidad.");
+            return false;
+        } finally {
+            setIsCheckingUsername(false);
+        }
+    };
+
+    const nextStep = async () => {
+        const step = steps[currentStep];
+        if (step.id === "username") {
+            const isValid = await validateUsername(username);
+            if (!isValid) return;
+        }
+
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         } else {
@@ -63,11 +141,12 @@ export function OnboardingPasarela({ onComplete }) {
     const handleFinish = async () => {
         setIsSaving(true);
         try {
-            // Guardar ubicación y preferencias
+            // Guardar ubicación, username y preferencias
             const response = await fetch("/api/user/profile", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    username: username ? (username.startsWith("@") ? username : `@${username}`) : "",
                     location: locationData.address,
                     lat: locationData.lat,
                     lng: locationData.lng,
@@ -151,6 +230,40 @@ export function OnboardingPasarela({ onComplete }) {
                         </div>
                     )}
 
+                    {step.id === "username" && (
+                        <div className="space-y-4">
+                            <div className="relative rounded-3xl border border-border bg-card p-2 shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                                <div className="flex items-center gap-2 px-4">
+                                    <span className="text-muted-foreground font-semibold text-xl">@</span>
+                                    <input
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            const cleanVal = val.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+                                            setUsername(cleanVal);
+                                            setUsernameError("");
+                                        }}
+                                        placeholder="tu_usuario"
+                                        className="w-full bg-transparent border-0 outline-none focus:ring-0 py-3 text-lg font-medium placeholder:text-muted-foreground/30 text-foreground"
+                                    />
+                                    {isCheckingUsername && (
+                                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                                    )}
+                                </div>
+                            </div>
+                            {usernameError ? (
+                                <p className="text-sm text-destructive text-center font-medium">
+                                    {usernameError}
+                                </p>
+                            ) : (
+                                <p className="text-xs text-center text-muted-foreground leading-relaxed">
+                                    Tu nombre de usuario debe ser único. Los demás podrán buscarte y mencionarte usando este nombre.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {step.id === "location" && (
                         <div className="space-y-4">
                             <div className="rounded-3xl border border-border overflow-hidden bg-muted shadow-sm">
@@ -226,9 +339,14 @@ export function OnboardingPasarela({ onComplete }) {
                         size="lg"
                         className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg"
                         onClick={nextStep}
-                        disabled={isSaving || (step.id === "location" && !locationData.address)}
+                        disabled={
+                            isSaving ||
+                            isCheckingUsername ||
+                            (step.id === "location" && !locationData.address) ||
+                            (step.id === "username" && (!username || username.trim().length < 3))
+                        }
                     >
-                        {isSaving ? (
+                        {isSaving || isCheckingUsername ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
                             <>
