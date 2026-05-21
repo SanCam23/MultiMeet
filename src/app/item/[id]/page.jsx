@@ -384,7 +384,7 @@ export default function ItemDetailPage() {
             sizes="100vw"
             className="object-cover bg-muted"
             priority
-            unoptimized={event.coverImage?.includes("dropbox.com") || event.coverImage?.includes("unsplash.com") || event.coverImage?.includes("images.unsplash.com")}
+            unoptimized={event.coverImage?.includes("dropbox") || event.coverImage?.includes("unsplash")}
           />
         )}
 
@@ -701,7 +701,7 @@ export default function ItemDetailPage() {
                               width={600}
                               height={600}
                               className="w-full h-auto block hover:opacity-90 transition-opacity"
-                              unoptimized={url.includes("dropbox.com") || url.includes("unsplash.com") || url.includes("images.unsplash.com")}
+                              unoptimized={url.includes("dropbox") || url.includes("unsplash")}
                             />
                           )}
                           {item.type === "video" && (
@@ -1157,7 +1157,7 @@ export default function ItemDetailPage() {
                   style={{ width: 'auto', height: 'auto' }}
                   className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl border border-border bg-black/5"
                   priority
-                  unoptimized={event.userGallery[selectedMediaIndex].url.includes("dropbox.com") || event.userGallery[selectedMediaIndex].url.includes("unsplash.com") || event.userGallery[selectedMediaIndex].url.includes("images.unsplash.com")}
+                  unoptimized={event.userGallery[selectedMediaIndex].url.includes("dropbox") || event.userGallery[selectedMediaIndex].url.includes("unsplash")}
                 />
               )}
             </div>
