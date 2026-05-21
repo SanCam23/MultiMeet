@@ -1221,7 +1221,7 @@ export default function ItemDetailPage() {
               ) : (
                 <Image
                   src={event.userGallery[selectedMediaIndex].url}
-                  alt={`Foto subida por ${user?.name || "usuario"}`}
+                  alt={`Foto subida por ${event.userGallery[selectedMediaIndex].user?.name || "usuario"}`}
                   width={1200}
                   height={1200}
                   style={{ width: 'auto', height: 'auto' }}
@@ -1238,7 +1238,7 @@ export default function ItemDetailPage() {
                 {event.userGallery[selectedMediaIndex].user?.imageUrl ? (
                   <img
                     src={event.userGallery[selectedMediaIndex].user.imageUrl}
-                    alt={`Avatar de ${user?.name || "usuario"}`}
+                    alt={`Avatar de ${event.userGallery[selectedMediaIndex].user?.name || "usuario"}`}
                     className="w-8 h-8 rounded-full object-cover border border-border"
                   />
                 ) : (
