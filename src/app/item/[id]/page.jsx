@@ -533,11 +533,10 @@ export default function ItemDetailPage() {
                           return (
                             <Star
                               key={star}
-                              className={`w-4 h-4 ${
-                                isFilled
+                              className={`w-4 h-4 ${isFilled
                                   ? "text-yellow-500 fill-yellow-500"
                                   : "text-muted-foreground/30 fill-transparent"
-                              }`}
+                                }`}
                             />
                           );
                         })}
