@@ -110,17 +110,17 @@ export function EventCard({
           <h3 className={`font-semibold text-lg mb-4 line-clamp-2 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-primary" : theme === "dark" ? "text-white" : "text-primary"}`}>{displayTitle}</h3>
           <div className={`space-y-3 text-sm mt-auto ${isHighContrast ? "text-white" : "text-muted-foreground"}`}>
             <div className="flex items-center gap-3">
-              <Calendar className={`w-5 h-5 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-primary"}`} aria-hidden="true" />
+              <Calendar className={`w-5 h-5 shrink-0 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-primary"}`} aria-hidden="true" />
               <span>
                 {displayDate} a las {displayTime}
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <MapPin className={`w-5 h-5 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-secondary"}`} aria-hidden="true" />
+              <MapPin className={`w-5 h-5 shrink-0 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-secondary"}`} aria-hidden="true" />
               <span className="line-clamp-1">{displayLocation}</span>
             </div>
             <div className="flex items-center gap-3">
-              <Users className={`w-5 h-5 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-accent"}`} aria-hidden="true" />
+              <Users className={`w-5 h-5 shrink-0 ${isFinished ? "text-muted-foreground" : isHighContrast ? "text-white" : "text-accent"}`} aria-hidden="true" />
               <span>{displayParticipants.toLocaleString()} asistentes</span>
             </div>
           </div>
