@@ -29,6 +29,14 @@ const categories = [
 export default function UploadPage() {
   const router = useRouter();
   const coverImageInputRef = useRef(null);
+  const titleRef = useRef(null);
+  const categoriesRef = useRef(null);
+  const locationRef = useRef(null);
+  const dateRef = useRef(null);
+  const timeRef = useRef(null);
+  const parentEventRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const [ariaLiveMessage, setAriaLiveMessage] = useState("");
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [formType, setFormType] = useState("new");
   const [title, setTitle] = useState("");
@@ -48,6 +56,7 @@ export default function UploadPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+  const [fieldError, setFieldError] = useState({ field: "", message: "" });
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
@@ -57,6 +66,25 @@ export default function UploadPage() {
   const [parentEventId, setParentEventId] = useState("");
   const [myEvents, setMyEvents] = useState([]);
   const [overrideLocation, setOverrideLocation] = useState(false);
+  const [hasFetchedEvents, setHasFetchedEvents] = useState(false);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const focusAndAnnounce = (ref, message, fieldKey) => {
+    // Limpiar errores anteriores y establecer el nuevo error inline
+    setFieldError({ field: fieldKey || "", message });
+    setSubmitError("");
+    // Reset y re-set del aria-live para que el lector siempre lo anuncie
+    setAriaLiveMessage("");
+    setTimeout(() => {
+      setAriaLiveMessage(message);
+    }, 50);
+    if (ref && ref.current) {
+      ref.current.focus();
+      ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      setModalMessage(message);
+      setShowModal(true);
+    }
+  };
   const [editionNumber, setEditionNumber] = useState(null);
   const [parentEventDetails, setParentEventDetails] = useState(null);
 
@@ -86,15 +114,23 @@ export default function UploadPage() {
   }, [parentEventId]);
 
   useEffect(() => {
-    if (formType === "extend" && myEvents.length === 0) {
+    if (formType === "extend" && !hasFetchedEvents && !isLoadingEvents) {
+      setIsLoadingEvents(true);
       fetch("/api/events/my")
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) setMyEvents(data);
+          setHasFetchedEvents(true);
         })
-        .catch(console.error);
+        .catch((err) => {
+          console.error(err);
+          setHasFetchedEvents(true);
+        })
+        .finally(() => {
+          setIsLoadingEvents(false);
+        });
     }
-  }, [formType, myEvents.length]);
+  }, [formType, hasFetchedEvents, isLoadingEvents]);
 
   useEffect(() => {
     return () => {
@@ -165,31 +201,22 @@ export default function UploadPage() {
   const handleGenerateDescription = async () => {
     setSubmitError("");
     setSubmitSuccess("");
+    setAriaLiveMessage("");
 
     const isExtend = formType === "extend";
 
     if (isExtend) {
-      if (!parentEventId) {
-        setModalMessage("Debes seleccionar el evento original para ampliar antes de generar la descripción.");
-        setShowModal(true);
-        return;
-      }
-      if (!title.trim() || !date || !time) {
-        setModalMessage("Debes completar la aportación (título), la fecha y la hora de la ampliación para generar tu descripción.");
-        setShowModal(true);
-        return;
-      }
-      if (overrideLocation && !locationData.address.trim()) {
-        setModalMessage("Has marcado la opción de cambiar ubicación; debes seleccionar la nueva ubicación en el mapa antes de generar la descripción.");
-        setShowModal(true);
-        return;
-      }
+      if (!parentEventId) return focusAndAnnounce(parentEventRef, "Error: Selecciona el evento original para ampliar.", "parentEvent");
+      if (!title.trim()) return focusAndAnnounce(titleRef, "Error: El título de la aportación es obligatorio.", "title");
+      if (overrideLocation && !locationData.address.trim()) return focusAndAnnounce(locationRef, "Error: Selecciona la nueva ubicación.", "location");
+      if (!date) return focusAndAnnounce(dateRef, "Error: Selecciona la fecha.", "date");
+      if (!time) return focusAndAnnounce(timeRef, "Error: Selecciona la hora.", "time");
     } else {
-      if (!title.trim() || selectedCategories.length === 0 || !locationData.address.trim() || !date || !time) {
-        setModalMessage("Debes completar el título, la ubicación, la fecha y la hora para que podamos generar tu descripción");
-        setShowModal(true);
-        return;
-      }
+      if (!title.trim()) return focusAndAnnounce(titleRef, "Error: El título del evento es obligatorio.", "title");
+      if (selectedCategories.length === 0) return focusAndAnnounce(categoriesRef, "Error: Selecciona al menos una categoría.", "categories");
+      if (!locationData.address.trim()) return focusAndAnnounce(locationRef, "Error: Selecciona una ubicación en el mapa.", "location");
+      if (!date) return focusAndAnnounce(dateRef, "Error: Selecciona la fecha.", "date");
+      if (!time) return focusAndAnnounce(timeRef, "Error: Selecciona la hora.", "time");
     }
 
     try {
@@ -241,33 +268,34 @@ export default function UploadPage() {
 
     setSubmitError("");
     setSubmitSuccess("");
+    setFieldError({ field: "", message: "" });
+    setAriaLiveMessage("");
 
     const isExtend = formType === "extend";
 
-    if (isExtend && !parentEventId) {
-      setSubmitError("Selecciona un evento original para ampliar.");
-      return;
-    }
-
-    if (!isExtend && selectedCategories.length === 0) {
-      setSubmitError("Selecciona al menos una categoría.");
-      return;
-    }
-
-    if ((!isExtend || overrideLocation) && !locationData.address.trim()) {
-      setSubmitError("Selecciona una ubicación.");
-      return;
+    if (isExtend) {
+      if (!parentEventId) return focusAndAnnounce(parentEventRef, "Error: Selecciona un evento original para ampliar.", "parentEvent");
+      if (!title.trim()) return focusAndAnnounce(titleRef, "Error: El título de la aportación es obligatorio.", "title");
+      if (!description.trim()) return focusAndAnnounce(descriptionRef, "Error: La descripción de la aportación es obligatoria.", "description");
+      if (overrideLocation && !locationData.address.trim()) return focusAndAnnounce(locationRef, "Error: Selecciona la nueva ubicación.", "location");
+      if (!date) return focusAndAnnounce(dateRef, "Error: Selecciona la fecha.", "date");
+      if (!time) return focusAndAnnounce(timeRef, "Error: Selecciona la hora.", "time");
+    } else {
+      if (!title.trim()) return focusAndAnnounce(titleRef, "Error: El título del evento es obligatorio.", "title");
+      if (selectedCategories.length === 0) return focusAndAnnounce(categoriesRef, "Error: Selecciona al menos una categoría.", "categories");
+      if (!locationData.address.trim()) return focusAndAnnounce(locationRef, "Error: Selecciona una ubicación en el mapa.", "location");
+      if (!date) return focusAndAnnounce(dateRef, "Error: Selecciona la fecha.", "date");
+      if (!time) return focusAndAnnounce(timeRef, "Error: Selecciona la hora.", "time");
+      if (!description.trim()) return focusAndAnnounce(descriptionRef, "Error: La descripción del evento es obligatoria.", "description");
     }
 
     const dateTime = new Date(`${date}T${time}`);
     if (Number.isNaN(dateTime.getTime())) {
-      setSubmitError("La fecha y hora no son válidas.");
-      return;
+      return focusAndAnnounce(dateRef, "Error: La fecha y hora no son válidas.", "date");
     }
 
     if (dateTime.getTime() <= Date.now()) {
-      setSubmitError("La fecha y hora del evento deben ser futuras.");
-      return;
+      return focusAndAnnounce(dateRef, "Error: La fecha y hora del evento deben ser futuras.", "date");
     }
 
     try {
@@ -404,7 +432,8 @@ export default function UploadPage() {
           </div>
 
           {formType === "new" ? (
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+              <div className="sr-only" role="status" aria-live="assertive">{ariaLiveMessage}</div>
               {(submitError || submitSuccess) && (
                 <div
                   className={`rounded-xl border px-4 py-3 text-sm ${submitError
@@ -480,12 +509,20 @@ export default function UploadPage() {
                 <Label htmlFor="title" className="mb-3 block">Título del evento</Label>
                 <Input
                   id="title"
+                  ref={titleRef}
                   placeholder="Dale un título atractivo a tu meetup"
-                  className="h-12 rounded-xl"
+                  className={`h-12 rounded-xl ${fieldError.field === "title" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={fieldError.field === "title" ? "true" : undefined}
+                  aria-describedby={fieldError.field === "title" ? "error-title" : undefined}
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
+                  onChange={(e) => { setTitle(e.target.value); if (fieldError.field === "title") setFieldError({ field: "", message: "" }); }}
                 />
+                {fieldError.field === "title" && (
+                  <p id="error-title" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {fieldError.message}
+                  </p>
+                )}
               </div>
 
               {/* Categories */}
@@ -494,12 +531,17 @@ export default function UploadPage() {
                   <Tag className="w-4 h-4 inline mr-1.5 text-accent" aria-hidden="true" />
                   Categorías
                 </Label>
-                <div className="flex flex-wrap gap-3">
+                <div
+                  className={`flex flex-wrap gap-3 rounded-xl p-1 ${fieldError.field === "categories" ? "ring-2 ring-destructive/50" : ""}`}
+                  ref={categoriesRef}
+                  tabIndex="-1"
+                  aria-describedby={fieldError.field === "categories" ? "error-categories" : undefined}
+                >
                   {categories.map((category) => (
                     <button
                       key={category}
                       type="button"
-                      onClick={() => toggleCategory(category)}
+                      onClick={() => { toggleCategory(category); if (fieldError.field === "categories") setFieldError({ field: "", message: "" }); }}
                       className={`inline-flex px-4 py-2 rounded-full text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-ring transition-colors border ${selectedCategories.includes(category)
                         ? "bg-accent text-accent-foreground border-accent hover:bg-accent/90"
                         : "bg-transparent text-foreground border-input hover:border-accent"
@@ -509,10 +551,16 @@ export default function UploadPage() {
                     </button>
                   ))}
                 </div>
+                {fieldError.field === "categories" && (
+                  <p id="error-categories" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {fieldError.message}
+                  </p>
+                )}
               </div>
 
               {/* Location */}
-              <div>
+              <div ref={locationRef} tabIndex="-1">
                 <Label htmlFor="location" className="mb-3 block">
                   <MapPin className="w-4 h-4 inline mr-1.5 text-secondary" aria-hidden="true" />
                   Ubicación
@@ -523,8 +571,15 @@ export default function UploadPage() {
                   lng={locationData.lng}
                   onChange={({ address, lat, lng }) => {
                     setLocationData({ address, lat, lng });
+                    if (fieldError.field === "location") setFieldError({ field: "", message: "" });
                   }}
                 />
+                {fieldError.field === "location" && (
+                  <p id="error-location" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {fieldError.message}
+                  </p>
+                )}
               </div>
 
               {/* Date & Time */}
@@ -534,25 +589,35 @@ export default function UploadPage() {
                     <Calendar className="w-4 h-4 inline mr-1.5 text-primary" aria-hidden="true" />
                     Fecha
                   </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    className="h-12 rounded-xl"
+                  <Input id="date" ref={dateRef} type="date"
+                    className={`h-12 rounded-xl ${fieldError.field === "date" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    aria-invalid={fieldError.field === "date" ? "true" : undefined}
+                    aria-describedby={fieldError.field === "date" ? "error-date" : undefined}
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
+                    onChange={(e) => { setDate(e.target.value); if (fieldError.field === "date") setFieldError({ field: "", message: "" }); }}
                   />
+                  {fieldError.field === "date" && (
+                    <p id="error-date" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      {fieldError.message}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="time" className="mb-3 block">Hora</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    className="h-12 rounded-xl"
+                  <Input id="time" ref={timeRef} type="time"
+                    className={`h-12 rounded-xl ${fieldError.field === "time" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    aria-invalid={fieldError.field === "time" ? "true" : undefined}
+                    aria-describedby={fieldError.field === "time" ? "error-time" : undefined}
                     value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    required
+                    onChange={(e) => { setTime(e.target.value); if (fieldError.field === "time") setFieldError({ field: "", message: "" }); }}
                   />
+                  {fieldError.field === "time" && (
+                    <p id="error-time" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      {fieldError.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -577,12 +642,21 @@ export default function UploadPage() {
                 <Label htmlFor="description" className="mb-3 block">Descripción</Label>
                 <Textarea
                   id="description"
+                  ref={descriptionRef}
                   placeholder="Cuéntale a la gente de qué trata tu meetup..."
-                  className="min-h-32 rounded-xl"
+                  className={`min-h-32 rounded-xl ${fieldError.field === "description" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={fieldError.field === "description" ? "true" : undefined}
+                  aria-describedby={fieldError.field === "description" ? "error-description" : undefined}
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => { setDescription(e.target.value); if (fieldError.field === "description") setFieldError({ field: "", message: "" }); }}
                   required
                 />
+                {fieldError.field === "description" && (
+                  <p id="error-description" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {fieldError.message}
+                  </p>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
@@ -617,8 +691,36 @@ export default function UploadPage() {
                 {isSubmitting ? "Publicando..." : "Publicar Meetup"}
               </Button>
             </form>
+          ) : isLoadingEvents ? (
+            <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+              <div className="animate-spin w-10 h-10 text-primary mb-4">
+                <svg className="animate-spin w-10 h-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              </div>
+              <p className="text-muted-foreground">Cargando tus meetups...</p>
+            </div>
+          ) : hasFetchedEvents && myEvents.length === 0 ? (
+            <div className="flex flex-col items-center gap-4 bg-card p-8 rounded-3xl border border-border shadow-sm max-w-md mx-auto my-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                <Calendar className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">No tienes eventos creados</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                La función de ampliar sirve para extender los eventos que has creado previamente. Debes crear un evento antes de poder ampliarlo.
+              </p>
+              <button
+                type="button"
+                onClick={() => setFormType("new")}
+                className={`mt-2 bg-primary ${isHighContrast ? "text-black" : "text-white"} px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring`}
+              >
+                Crear un evento
+              </button>
+            </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+              <div className="sr-only" role="status" aria-live="assertive">{ariaLiveMessage}</div>
               {(submitError || submitSuccess) && (
                 <div
                   className={`rounded-xl border px-4 py-3 text-sm ${submitError
@@ -635,10 +737,16 @@ export default function UploadPage() {
                 <Label htmlFor="parentEvent" className="mb-3 block">Ampliar desde evento</Label>
                 <select
                   id="parentEvent"
-                  className="w-full h-12 px-4 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground"
+                  ref={parentEventRef}
+                  className={`w-full h-12 px-4 bg-input-background border rounded-xl focus:outline-none focus:ring-2 text-sm text-foreground ${
+                    fieldError.field === "parentEvent"
+                      ? "border-destructive focus:ring-destructive"
+                      : "border-input focus:ring-primary"
+                  }`}
+                  aria-invalid={fieldError.field === "parentEvent" ? "true" : undefined}
+                  aria-describedby={fieldError.field === "parentEvent" ? "error-parentEvent" : undefined}
                   value={parentEventId}
-                  onChange={(e) => setParentEventId(e.target.value)}
-                  required
+                  onChange={(e) => { setParentEventId(e.target.value); if (fieldError.field === "parentEvent") setFieldError({ field: "", message: "" }); }}
                 >
                   <option value="">Selecciona un evento...</option>
                   {myEvents.map((ev) => (
@@ -647,6 +755,12 @@ export default function UploadPage() {
                     </option>
                   ))}
                 </select>
+                {fieldError.field === "parentEvent" && (
+                  <p id="error-parentEvent" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {fieldError.message}
+                  </p>
+                )}
                 {editionNumber && (
                   <p className="mt-2 text-xs font-semibold text-accent animate-pulse">
                     ✨ Esta ampliación se registrará como la {editionNumber}ª edición del meetup.
@@ -659,24 +773,41 @@ export default function UploadPage() {
                 <Label htmlFor="extensionTitle" className="mb-3 block">Título para esta edición</Label>
                 <Input
                   id="extensionTitle"
+                  ref={titleRef}
                   placeholder="¿Qué añades a este evento?"
-                  className="h-12 rounded-xl"
+                  className={`h-12 rounded-xl ${fieldError.field === "title" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={fieldError.field === "title" ? "true" : undefined}
+                  aria-describedby={fieldError.field === "title" ? "error-ext-title" : undefined}
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
+                  onChange={(e) => { setTitle(e.target.value); if (fieldError.field === "title") setFieldError({ field: "", message: "" }); }}
                 />
+                {fieldError.field === "title" && (
+                  <p id="error-ext-title" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {fieldError.message}
+                  </p>
+                )}
               </div>
 
               <div>
                 <Label htmlFor="extensionDetails" className="mb-3 block">Detalles</Label>
                 <Textarea
                   id="extensionDetails"
+                  ref={descriptionRef}
                   placeholder="Describe tu contribución..."
-                  className="min-h-32 rounded-xl"
+                  className={`min-h-32 rounded-xl ${fieldError.field === "description" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={fieldError.field === "description" ? "true" : undefined}
+                  aria-describedby={fieldError.field === "description" ? "error-ext-description" : undefined}
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => { setDescription(e.target.value); if (fieldError.field === "description") setFieldError({ field: "", message: "" }); }}
                   required
                 />
+                {fieldError.field === "description" && (
+                  <p id="error-ext-description" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {fieldError.message}
+                  </p>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
@@ -724,15 +855,22 @@ export default function UploadPage() {
                 </div>
 
                 {overrideLocation && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200" ref={locationRef} tabIndex="-1">
                     <LocationPicker
                       value={locationData.address}
                       lat={locationData.lat}
                       lng={locationData.lng}
                       onChange={({ address, lat, lng }) => {
                         setLocationData({ address, lat, lng });
+                        if (fieldError.field === "location") setFieldError({ field: "", message: "" });
                       }}
                     />
+                    {fieldError.field === "location" && (
+                      <p id="error-ext-location" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                        {fieldError.message}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -741,11 +879,41 @@ export default function UploadPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="extDate" className="mb-3 block">Fecha</Label>
-                  <Input id="extDate" type="date" className="h-12 rounded-xl" value={date} onChange={(e) => setDate(e.target.value)} required />
+                  <Input
+                    id="extDate"
+                    ref={dateRef}
+                    type="date"
+                    className={`h-12 rounded-xl ${fieldError.field === "date" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    aria-invalid={fieldError.field === "date" ? "true" : undefined}
+                    aria-describedby={fieldError.field === "date" ? "error-ext-date" : undefined}
+                    value={date}
+                    onChange={(e) => { setDate(e.target.value); if (fieldError.field === "date") setFieldError({ field: "", message: "" }); }}
+                  />
+                  {fieldError.field === "date" && (
+                    <p id="error-ext-date" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      {fieldError.message}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="extTime" className="mb-3 block">Hora</Label>
-                  <Input id="extTime" type="time" className="h-12 rounded-xl" value={time} onChange={(e) => setTime(e.target.value)} required />
+                  <Input
+                    id="extTime"
+                    ref={timeRef}
+                    type="time"
+                    className={`h-12 rounded-xl ${fieldError.field === "time" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    aria-invalid={fieldError.field === "time" ? "true" : undefined}
+                    aria-describedby={fieldError.field === "time" ? "error-ext-time" : undefined}
+                    value={time}
+                    onChange={(e) => { setTime(e.target.value); if (fieldError.field === "time") setFieldError({ field: "", message: "" }); }}
+                  />
+                  {fieldError.field === "time" && (
+                    <p id="error-ext-time" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      {fieldError.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

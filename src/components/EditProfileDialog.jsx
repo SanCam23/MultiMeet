@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { X, Save, Camera, Loader2, MapPin } from "lucide-react";
+import { X, Save, Camera, Loader2, MapPin, AlertCircle } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { useUser } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
@@ -18,7 +19,9 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
   const { theme } = useTheme();
   const { user } = useUser();
   const fileInputRef = useRef(null);
+  const nameInputRef = useRef(null);
   
+  const [ariaLiveMessage, setAriaLiveMessage] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -33,6 +36,7 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const trapRef = useFocusTrap(open, () => onOpenChange(false));
 
   useEffect(() => {
     if (open) {
@@ -100,6 +104,24 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setAriaLiveMessage("");
+    
+    if (!formData.name.trim()) {
+      const msg = "Error: El nombre completo es obligatorio.";
+      setError(msg);
+      // Reset y re-set para garantizar el anuncio del lector de pantalla
+      setTimeout(() => {
+        setAriaLiveMessage(msg);
+      }, 50);
+      setTimeout(() => {
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+          nameInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -135,11 +157,16 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
         aria-hidden="true"
       />
       <div
+        ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-profile-title"
         className="relative w-full sm:max-w-[525px] bg-card border border-border shadow-2xl rounded-3xl p-0 gap-0 max-h-[90vh] flex flex-col overflow-hidden m-4 animate-in fade-in zoom-in-95 duration-200"
       >
+        {/* Lector de pantalla (Aria Live) oculto visualmente */}
+        <div className="sr-only" role="status" aria-live="assertive">
+          {ariaLiveMessage}
+        </div>
         <div className="px-6 pt-6 pb-4 border-b border-border shrink-0 flex items-center justify-between">
           <h2 id="edit-profile-title" className="text-2xl font-bold">Editar Perfil</h2>
           <button
@@ -152,8 +179,8 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
         </div>
 
         <div className="overflow-y-auto flex-1 overscroll-contain px-6 py-5">
-          <form id="edit-profile-form" onSubmit={handleSubmit} className="space-y-6">
-            {error && (
+          <form id="edit-profile-form" onSubmit={handleSubmit} className="space-y-6" noValidate>
+            {error && formData.name.trim() && (
               <div className="p-3 bg-red-100/20 border border-red-500/50 text-red-500 rounded-xl text-sm text-center">
                 {error}
               </div>
@@ -197,13 +224,21 @@ export function EditProfileDialog({ open, onOpenChange, userData, onSaveSuccess 
               <Label htmlFor="name" className="mb-2 block">Nombre completo</Label>
               <Input
                 id="name"
+                ref={nameInputRef}
                 type="text"
                 placeholder="Tu nombre completo"
-                className="h-12 rounded-xl"
+                className={`h-12 rounded-xl ${error && !formData.name.trim() ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                aria-invalid={error && !formData.name.trim() ? "true" : undefined}
+                aria-describedby={error && !formData.name.trim() ? "error-name" : undefined}
                 value={formData.name}
-                onChange={handleChange}
-                required
+                onChange={(e) => { handleChange(e); if (error) setError(""); }}
               />
+              {error && !formData.name.trim() && (
+                <p id="error-name" role="alert" className="mt-1.5 text-sm text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  {error}
+                </p>
+              )}
             </div>
 
             <div>

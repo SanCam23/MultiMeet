@@ -227,8 +227,12 @@ export default function CategoriesPage() {
 
           <form onSubmit={handleSearch} className="flex gap-3 max-w-3xl mx-auto lg:mx-0">
             <div className="flex-1 relative">
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" aria-hidden="true" />
+              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary z-10" aria-hidden="true" />
+              <Label htmlFor="global-search-input" className="sr-only">
+                Buscar eventos, personas o temas
+              </Label>
               <Input
+                id="global-search-input"
                 type="search"
                 placeholder="Busca eventos, personas o temas..."
                 value={searchQuery}
@@ -238,7 +242,7 @@ export default function CategoriesPage() {
                     setSubmittedQuery("");
                   }
                 }}
-                className="pl-12 h-12 rounded-xl"
+                className="pl-12 h-12 rounded-xl relative z-0"
               />
             </div>
             <Button
@@ -281,18 +285,28 @@ export default function CategoriesPage() {
                     Rango de fechas
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      type="date"
-                      className="h-12 rounded-xl"
-                      value={filterStartDate}
-                      onChange={(e) => setFilterStartDate(e.target.value)}
-                    />
-                    <Input
-                      type="date"
-                      className="h-12 rounded-xl"
-                      value={filterEndDate}
-                      onChange={(e) => setFilterEndDate(e.target.value)}
-                    />
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="filterStartDate" className="sr-only">Fecha de inicio</Label>
+                      <Input
+                        id="filterStartDate"
+                        type="date"
+                        className="h-12 rounded-xl"
+                        value={filterStartDate}
+                        onChange={(e) => setFilterStartDate(e.target.value)}
+                        aria-label="Fecha de inicio"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="filterEndDate" className="sr-only">Fecha de finalización</Label>
+                      <Input
+                        id="filterEndDate"
+                        type="date"
+                        className="h-12 rounded-xl"
+                        value={filterEndDate}
+                        onChange={(e) => setFilterEndDate(e.target.value)}
+                        aria-label="Fecha de finalización"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -313,21 +327,25 @@ export default function CategoriesPage() {
                 <div>
                   <Label className="mb-3 block">Categorías</Label>
                   <div className="flex flex-wrap gap-3">
-                    {categoriesList.map((cat) => (
-                      <button
-                        key={cat.name}
-                        type="button"
-                        onClick={() => toggleCategory(cat.name)}
-                        className={`cursor-pointer px-4 py-2 rounded-full transition-all text-xs font-semibold border ${
-                          selectedCategories.has(cat.name)
-                            ? "bg-accent text-accent-foreground border-accent"
-                            : "bg-transparent text-foreground border-input hover:border-accent"
-                        }`}
-                      >
-                        <span className="mr-1.5">{cat.icon}</span>
-                        {cat.name}
-                      </button>
-                    ))}
+                    {categoriesList.map((cat) => {
+                      const isPressed = selectedCategories.has(cat.name);
+                      return (
+                        <button
+                          key={cat.name}
+                          type="button"
+                          aria-pressed={isPressed}
+                          onClick={() => toggleCategory(cat.name)}
+                          className={`cursor-pointer px-4 py-2 rounded-full transition-all text-xs font-semibold border ${
+                            isPressed
+                              ? "bg-accent text-accent-foreground border-accent"
+                              : "bg-transparent text-foreground border-input hover:border-accent"
+                          }`}
+                        >
+                          <span className="mr-1.5" aria-hidden="true">{cat.icon}</span>
+                          {cat.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -381,6 +399,7 @@ export default function CategoriesPage() {
                 <button
                   key={cat.name}
                   onClick={() => toggleCategory(cat.name)}
+                  aria-pressed={isActive}
                   className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all flex-shrink-0 border ${
                     isActive
                       ? isHighContrast
@@ -391,7 +410,7 @@ export default function CategoriesPage() {
                       : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
                   }`}
                 >
-                  <span>{cat.icon}</span>
+                  <span aria-hidden="true">{cat.icon}</span>
                   {cat.name}
                 </button>
               );

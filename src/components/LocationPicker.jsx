@@ -164,7 +164,11 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors z-10">
           <Search className="w-4 h-4" />
         </div>
+        <label htmlFor="map-location-search-input" className="sr-only">
+          Buscar dirección o ubicación en el mapa
+        </label>
         <input
+          id="map-location-search-input"
           type="text"
           placeholder="Busca una dirección o haz clic en el mapa..."
           className="w-full pl-10 pr-12 py-3 bg-card border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
@@ -182,6 +186,7 @@ export default function LocationPicker({ value, lat, lng, onChange }) {
             disabled={loading}
             className="p-2 hover:bg-muted rounded-xl text-primary transition-colors disabled:opacity-50"
             title="Usar ubicación actual"
+            aria-label="Usar mi ubicación geográfica actual"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
           </button>

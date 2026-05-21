@@ -260,7 +260,7 @@ function DashboardContent() {
                   <button
                     role="tab"
                     aria-selected={mainTab === "timeline"}
-                    onClick={() => { setMainTab("timeline"); setSubTab("upcoming"); }}
+                    onClick={() => { setMainTab("timeline"); setSubTab("past"); }}
                     className={`rounded-lg transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
                       mainTab === "timeline"
                         ? `bg-primary ${isHighContrast ? "text-black" : "text-primary-foreground"} shadow-sm`
@@ -304,18 +304,6 @@ function DashboardContent() {
                     <>
                       <button
                         role="tab"
-                        aria-selected={subTab === "upcoming"}
-                        onClick={() => setSubTab("upcoming")}
-                        className={`rounded-md transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
-                          subTab === "upcoming"
-                            ? `bg-accent ${isHighContrast ? "text-black" : "text-accent-foreground"} shadow-sm`
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        Próximos
-                      </button>
-                      <button
-                        role="tab"
                         aria-selected={subTab === "past"}
                         onClick={() => setSubTab("past")}
                         className={`rounded-md transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
@@ -325,6 +313,18 @@ function DashboardContent() {
                         }`}
                       >
                         Pasados
+                      </button>
+                      <button
+                        role="tab"
+                        aria-selected={subTab === "upcoming"}
+                        onClick={() => setSubTab("upcoming")}
+                        className={`rounded-md transition-colors font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
+                          subTab === "upcoming"
+                            ? `bg-accent ${isHighContrast ? "text-black" : "text-accent-foreground"} shadow-sm`
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        Próximos
                       </button>
                     </>
                   )}
@@ -365,8 +365,8 @@ function DashboardContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 lg:gap-8 mt-6">
                   {(mainTab === "posts" && subTab === "personal" ? personalEvents :
                     mainTab === "posts" && subTab === "joined" ? joinedEvents :
-                    mainTab === "timeline" && subTab === "upcoming" ? joinedEvents.filter(e => new Date(e.dateTime) >= new Date()) :
-                    joinedEvents.filter(e => new Date(e.dateTime) < new Date())).map((event) => (
+                    mainTab === "timeline" && subTab === "upcoming" ? joinedEvents.filter(e => new Date(e.dateTime) >= new Date() && e.status !== "finished") :
+                    joinedEvents.filter(e => new Date(e.dateTime) < new Date() || e.status === "finished")).map((event) => (
                   <EventCard key={event.id} {...event} />
                   ))}
                 </div>

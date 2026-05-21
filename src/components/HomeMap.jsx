@@ -6,6 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X } from "lucide-react";
 import Link from "next/link";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 // Custom hook to fit all markers in view
 function FitBounds({ events }) {
@@ -27,15 +28,22 @@ function FitBounds({ events }) {
 export default function HomeMap({ events, onClose }) {
   // Filter events that have valid coordinates
   const mapEvents = events.filter(e => e.lat != null && e.lng != null);
+  const trapRef = useFocusTrap(true, onClose);
 
   // Default center (Spain roughly, or Madrid) if no events
   const defaultCenter = [40.4168, -3.7038];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 md:p-8 pb-[10vh]">
-      <div className="bg-card w-full h-[80dvh] md:h-[90vh] max-h-[800px] max-w-6xl rounded-xl md:rounded-2xl overflow-hidden shadow-2xl relative flex flex-col border border-border">
+      <div 
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="map-dialog-title"
+        className="bg-card w-full h-[80dvh] md:h-[90vh] max-h-[800px] max-w-6xl rounded-xl md:rounded-2xl overflow-hidden shadow-2xl relative flex flex-col border border-border"
+      >
         <div className="flex items-center justify-between p-4 bg-background border-b border-border">
-          <h2 className="text-xl font-bold text-primary">Mapa de Eventos</h2>
+          <h2 id="map-dialog-title" className="text-xl font-bold text-primary">Mapa de Eventos</h2>
           <button 
             onClick={onClose}
             className="p-2 rounded-full hover:bg-muted transition-colors"
@@ -60,21 +68,29 @@ export default function HomeMap({ events, onClose }) {
               // Extract image (fallback if needed)
               const imageUrl = event.coverImage || event.image || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80";
               
-              // Create custom icon using L.divIcon to allow HTML/CSS styling
+              // Create custom icon using L.divIcon to allow HTML/CSS styling and full keyboard accessibility
+              const escapedTitle = (event.title || "").replace(/"/g, '&quot;');
               const customIcon = L.divIcon({
                 className: "custom-event-marker",
-                html: `<div style="
-                  width: 56px; 
-                  height: 56px; 
-                  border-radius: 12px; 
-                  overflow: hidden; 
-                  border: 3px solid white; 
-                  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-                  background-image: url('${imageUrl}');
-                  background-size: cover;
-                  background-position: center;
-                  transition: transform 0.2s;
-                "></div>`,
+                html: `<div 
+                  role="button" 
+                  tabindex="0" 
+                  aria-label="Marcador interactivo del evento: ${escapedTitle}"
+                  onkeydown="if(event.key === 'Enter' || event.key === ' ') { this.click(); event.preventDefault(); }"
+                  style="
+                    width: 56px; 
+                    height: 56px; 
+                    border-radius: 12px; 
+                    overflow: hidden; 
+                    border: 3px solid white; 
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+                    background-image: url('${imageUrl}');
+                    background-size: cover;
+                    background-position: center;
+                    transition: transform 0.2s;
+                    cursor: pointer;
+                  "
+                ></div>`,
                 iconSize: [56, 56],
                 iconAnchor: [28, 28],
                 popupAnchor: [0, -28]

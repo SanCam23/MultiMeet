@@ -14,6 +14,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { FollowButton } from "@/components/FollowButton";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const MapViewer = dynamic(() => import("@/components/MapViewer"), {
   ssr: false,
@@ -54,6 +55,16 @@ export default function ItemDetailPage() {
   const { theme } = useTheme();
   const isHighContrast = theme === "high-contrast";
 
+  const trapDelete = useFocusTrap(showDeleteModal, () => !deletingEvent && setShowDeleteModal(false));
+  const trapParticipants = useFocusTrap(showParticipantsModal, () => setShowParticipantsModal(false));
+  const trapFinish = useFocusTrap(showFinishModal, () => setShowFinishModal(false));
+  const trapJoin = useFocusTrap(showJoinModal, () => setShowJoinModal(false));
+  const trapLeave = useFocusTrap(showLeaveModal, () => setShowLeaveModal(false));
+  const trapRate = useFocusTrap(showRateModal, () => setShowRateModal(false));
+  const trapDeleteMedia = useFocusTrap(showDeleteMediaModal, () => setShowDeleteMediaModal(false));
+  const trapLightbox = useFocusTrap(selectedMediaIndex !== null, () => setSelectedMediaIndex(null));
+  const trapShare = useFocusTrap(showShareModal, () => setShowShareModal(false));
+
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userJoined, setUserJoined] = useState(false);
@@ -70,28 +81,29 @@ export default function ItemDetailPage() {
     }
   }, [isLoaded, userId, router, openSignIn]);
 
-  useEffect(() => {
+  const fetchEventDetails = async () => {
     if (!urlId) return;
-    fetch(`/api/events/${urlId}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Not found");
-        return res.json();
-      })
-      .then(data => {
-        setEvent(data);
-        if (userId) {
-          setIsAuthor(data.author?.clerkId === userId);
-          setUserJoined(data.participants?.some(p => p.clerkId === userId) || false);
+    try {
+      const res = await fetch(`/api/events/${urlId}`);
+      if (!res.ok) throw new Error("Not found");
+      const data = await res.json();
+      setEvent(data);
+      if (userId) {
+        setIsAuthor(data.author?.clerkId === userId);
+        setUserJoined(data.participants?.some(p => p.clerkId === userId) || false);
 
-          const myRating = data.ratings?.find(r => r.user?.clerkId === userId);
-          if (myRating) setRating(myRating.value);
-        }
-        setLoading(false);
-      })
-      .catch((e) => {
-        console.error(e);
-        setLoading(false);
-      });
+        const myRating = data.ratings?.find(r => r.user?.clerkId === userId);
+        if (myRating) setRating(myRating.value);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEventDetails();
   }, [urlId, userId]);
 
   if (!isLoaded || (isLoaded && !userId)) {
@@ -313,6 +325,7 @@ export default function ItemDetailPage() {
       if (res.ok) {
         setShowRateModal(false);
         setShowRateSuccess(true);
+        await fetchEventDetails();
         setTimeout(() => setShowRateSuccess(false), 3000);
       }
     } catch (e) {
@@ -361,6 +374,10 @@ export default function ItemDetailPage() {
     }
     return "";
   };
+
+  const ratingsCount = event?.ratings?.length || 0;
+  const ratingsSum = event?.ratings?.reduce((sum, r) => sum + r.value, 0) || 0;
+  const averageRating = ratingsCount > 0 ? (ratingsSum / ratingsCount).toFixed(1) : null;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -441,7 +458,7 @@ export default function ItemDetailPage() {
             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-8 relative overflow-hidden group transition-all hover:bg-primary/10 flex items-center gap-4 shadow-sm">
               {event.parentEvent.coverImage ? (
                 <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-background">
-                  <img src={event.parentEvent.coverImage} className="w-full h-full object-cover" alt="" />
+                  <img src={event.parentEvent.coverImage} className="w-full h-full object-cover" alt={`Portada de: ${event.parentEvent.title}`} />
                 </div>
               ) : (
                 <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -499,6 +516,43 @@ export default function ItemDetailPage() {
               <p className="text-sm text-muted-foreground">{event.locationText}</p>
             </div>
           </div>
+
+          {isFinished && (
+            <div className="flex items-start gap-4 pt-2 border-t border-border/50">
+              <Star className="w-6 h-6 text-yellow-500 mt-0.5 flex-shrink-0 fill-yellow-500" />
+              <div>
+                <p className="font-semibold mb-1">Valoración media</p>
+                <div className="text-sm text-muted-foreground">
+                  {averageRating ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg font-bold text-foreground">{averageRating}</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const ratingVal = parseFloat(averageRating);
+                          const isFilled = star <= Math.round(ratingVal);
+                          return (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${
+                                isFilled
+                                  ? "text-yellow-500 fill-yellow-500"
+                                  : "text-muted-foreground/30 fill-transparent"
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        ({ratingsCount} {ratingsCount === 1 ? "valoración" : "valoraciones"})
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="italic">Este evento aún no tiene valoraciones</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="h-40 md:h-48 bg-muted rounded-xl overflow-hidden relative group">
             {event.lat && event.lng ? (
@@ -560,7 +614,7 @@ export default function ItemDetailPage() {
                   <div className="bg-background border border-border rounded-xl p-3 flex gap-3 items-center hover:border-primary/50 transition-colors group shadow-sm">
                     {ext.coverImage ? (
                       <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
-                        <img src={ext.coverImage} className="w-full h-full object-cover" alt="" />
+                        <img src={ext.coverImage} className="w-full h-full object-cover" alt={`Portada de: ${ext.title}`} />
                       </div>
                     ) : (
                       <div className="w-14 h-14 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
@@ -688,9 +742,9 @@ export default function ItemDetailPage() {
                         >
                           {item.type === "video" ? (
                             <video
-                              src={`${url}#t=0.1`}
+                              src={`${url}#t=1`}
                               className="w-full h-auto block hover:opacity-90 transition-opacity"
-                              preload="metadata"
+                              preload="auto"
                               muted
                               playsInline
                             />
@@ -755,6 +809,7 @@ export default function ItemDetailPage() {
             aria-hidden="true"
           />
           <div
+            ref={trapDelete}
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-event-title"
@@ -802,26 +857,33 @@ export default function ItemDetailPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+          <div
+            ref={trapDelete}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirm-title"
+            className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative"
+          >
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+              aria-label="Cerrar"
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
 
             <div className="mb-6 flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">¿Eliminar evento?</h3>
+              <h3 id="delete-confirm-title" className="text-xl font-bold text-foreground">¿Eliminar evento?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
                 Esta acción no se puede deshacer. Se eliminará el evento, las fotos de la galería y se notificará a los participantes.
               </p>
             </div>
 
             {deleteError && (
-              <div className="mb-6 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm font-medium text-center">
+              <div role="alert" aria-live="assertive" className="mb-6 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm font-medium text-center">
                 {deleteError}
               </div>
             )}
@@ -856,15 +918,18 @@ export default function ItemDetailPage() {
             aria-hidden="true"
           />
           <div
+            ref={trapParticipants}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="participants-title"
             className="relative w-full max-w-md bg-card border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[80vh]"
           >
             <div className="px-6 py-5 border-b border-border flex justify-between items-center">
-              <h3 className="text-xl font-bold">Participantes ({event.participants?.length || 0})</h3>
+              <h3 id="participants-title" className="text-xl font-bold">Participantes ({event.participants?.length || 0})</h3>
               <button
                 onClick={() => setShowParticipantsModal(false)}
-                className="p-2 hover:bg-muted rounded-full transition-colors"
+                className="p-2 hover:bg-muted rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                aria-label="Cerrar"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -899,10 +964,11 @@ export default function ItemDetailPage() {
       {/* Modals para unirse/desapuntarse */}
       {showFinishModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+          <div ref={trapFinish} role="dialog" aria-modal="true" aria-labelledby="finish-title" className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
             <button
               onClick={() => setShowFinishModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
@@ -910,7 +976,7 @@ export default function ItemDetailPage() {
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">¿Finalizar evento?</h3>
+              <h3 id="finish-title" className="text-xl font-bold text-foreground">¿Finalizar evento?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
                 ¿Seguro que deseas dar por finalizado este evento? Esta acción no se puede deshacer.
               </p>
@@ -937,10 +1003,11 @@ export default function ItemDetailPage() {
 
       {showJoinModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+          <div ref={trapJoin} role="dialog" aria-modal="true" aria-labelledby="join-title" className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
             <button
               onClick={() => setShowJoinModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
@@ -948,7 +1015,7 @@ export default function ItemDetailPage() {
               <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 text-primary">
                 <UserPlus className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">¿Apuntarse al evento?</h3>
+              <h3 id="join-title" className="text-xl font-bold text-foreground">¿Apuntarse al evento?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
                 ¿Estás seguro de que deseas apuntarte a "{event.title}"? Confirma para unirte.
               </p>
@@ -975,10 +1042,11 @@ export default function ItemDetailPage() {
 
       {showLeaveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+          <div ref={trapLeave} role="dialog" aria-modal="true" aria-labelledby="leave-title" className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
             <button
               onClick={() => setShowLeaveModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
@@ -986,7 +1054,7 @@ export default function ItemDetailPage() {
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">¿Desapuntarse del evento?</h3>
+              <h3 id="leave-title" className="text-xl font-bold text-foreground">¿Desapuntarse del evento?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
                 ¿Estás seguro de que deseas desapuntarte de "{event.title}"? Podrás volver a apuntarte si aún hay plazas.
               </p>
@@ -1014,10 +1082,11 @@ export default function ItemDetailPage() {
       {/* Modal para valorar */}
       {showRateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+          <div ref={trapRate} role="dialog" aria-modal="true" aria-labelledby="rate-title" className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
             <button
               onClick={() => setShowRateModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1025,7 +1094,7 @@ export default function ItemDetailPage() {
               <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 text-primary">
                 <Star className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">¿Valorar evento?</h3>
+              <h3 id="rate-title" className="text-xl font-bold text-foreground">¿Valorar evento?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
                 Vas a valorar este evento con {rating} {rating === 1 ? 'estrella' : 'estrellas'}. ¿Confirmar?
               </p>
@@ -1062,10 +1131,11 @@ export default function ItemDetailPage() {
       {/* Modal para borrar imagen de la galería */}
       {showDeleteMediaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+          <div ref={trapDeleteMedia} role="dialog" aria-modal="true" aria-labelledby="delete-media-title" className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
             <button
               onClick={() => setShowDeleteMediaModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1073,7 +1143,7 @@ export default function ItemDetailPage() {
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">¿Eliminar multimedia?</h3>
+              <h3 id="delete-media-title" className="text-xl font-bold text-foreground">¿Eliminar multimedia?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
                 ¿Estás seguro de que deseas eliminar este elemento de la galería? Esta acción no se puede deshacer.
               </p>
@@ -1102,7 +1172,7 @@ export default function ItemDetailPage() {
 
       {/* Lightbox Modal */}
       {selectedMediaIndex !== null && event.userGallery && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/90 backdrop-blur-xl p-4 animate-in fade-in duration-200">
+        <div ref={trapLightbox} role="dialog" aria-modal="true" aria-label="Galería de imágenes" className="fixed inset-0 z-[200] flex items-center justify-center bg-background/90 backdrop-blur-xl p-4 animate-in fade-in duration-200">
           {/* Close Button */}
           <button
             onClick={() => setSelectedMediaIndex(null)}
@@ -1151,7 +1221,7 @@ export default function ItemDetailPage() {
               ) : (
                 <Image
                   src={event.userGallery[selectedMediaIndex].url}
-                  alt="Gallery preview"
+                  alt={`Foto subida por ${user?.name || "usuario"}`}
                   width={1200}
                   height={1200}
                   style={{ width: 'auto', height: 'auto' }}
@@ -1168,7 +1238,7 @@ export default function ItemDetailPage() {
                 {event.userGallery[selectedMediaIndex].user?.imageUrl ? (
                   <img
                     src={event.userGallery[selectedMediaIndex].user.imageUrl}
-                    alt="Avatar"
+                    alt={`Avatar de ${user?.name || "usuario"}`}
                     className="w-8 h-8 rounded-full object-cover border border-border"
                   />
                 ) : (
@@ -1193,15 +1263,22 @@ export default function ItemDetailPage() {
       {/* Modal interactivo de compartir (QR + Link) */}
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
+          <div
+            ref={trapShare}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-modal-title"
+            className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center"
+          >
             <button
               onClick={() => setShowShareModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors"
+              aria-label="Cerrar modal de compartir"
+              className="absolute top-4 right-4 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
             <div className="mb-6">
-              <h3 className="text-xl font-bold mb-4">Compartir evento</h3>
+              <h3 id="share-modal-title" className="text-xl font-bold mb-4">Compartir evento</h3>
               <div className="bg-white p-4 rounded-xl inline-block mb-4">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}/item/${urlId}` : '')}`}
