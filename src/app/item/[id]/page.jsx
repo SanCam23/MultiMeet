@@ -699,9 +699,9 @@ export default function ItemDetailPage() {
                         >
                           {item.type === "video" ? (
                             <video
-                              src={`${url}#t=0.1`}
+                              src={`${url}#t=1`}
                               className="w-full h-auto block hover:opacity-90 transition-opacity"
-                              preload="metadata"
+                              preload="auto"
                               muted
                               playsInline
                             />
