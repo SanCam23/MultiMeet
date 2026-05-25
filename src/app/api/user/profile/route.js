@@ -199,7 +199,7 @@ export async function PATCH(request) {
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
       { $set: filteredUpdates },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updatedUser) {

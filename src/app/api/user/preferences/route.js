@@ -26,7 +26,7 @@ export async function PATCH(request) {
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
       { $set: updateData },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedUser) {

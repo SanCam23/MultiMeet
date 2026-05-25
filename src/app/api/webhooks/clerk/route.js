@@ -76,7 +76,7 @@ export async function POST(req) {
           slug: slug,
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     )
     console.log(`Webhook: Usuario ${id} sincronizado (${eventType})`)
   }
