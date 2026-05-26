@@ -407,7 +407,7 @@ export default function CategoriesPage() {
                         : "bg-primary text-white border-primary shadow-md"
                       : isHighContrast
                       ? "bg-transparent text-foreground border-foreground hover:bg-foreground/10"
-                      : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                      : "bg-primary/10 text-primary dark:text-logo-title border-primary/20 hover:bg-primary/20"
                   }`}
                 >
                   <span aria-hidden="true">{cat.icon}</span>

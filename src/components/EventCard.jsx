@@ -67,7 +67,7 @@ export function EventCard({
                 className="object-cover"
                 placeholder="blur"
                 blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjIyMjMzIi8+PC9zdmc+"
-                unoptimized={displayImage.includes("dropbox.com") || displayImage.includes("unsplash.com") || displayImage.includes("images.unsplash.com")}
+                unoptimized={displayImage.includes("dropbox") || displayImage.includes("unsplash")}
               />
             )
           ) : (

@@ -81,28 +81,29 @@ export default function ItemDetailPage() {
     }
   }, [isLoaded, userId, router, openSignIn]);
 
-  useEffect(() => {
+  const fetchEventDetails = async () => {
     if (!urlId) return;
-    fetch(`/api/events/${urlId}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Not found");
-        return res.json();
-      })
-      .then(data => {
-        setEvent(data);
-        if (userId) {
-          setIsAuthor(data.author?.clerkId === userId);
-          setUserJoined(data.participants?.some(p => p.clerkId === userId) || false);
+    try {
+      const res = await fetch(`/api/events/${urlId}`);
+      if (!res.ok) throw new Error("Not found");
+      const data = await res.json();
+      setEvent(data);
+      if (userId) {
+        setIsAuthor(data.author?.clerkId === userId);
+        setUserJoined(data.participants?.some(p => p.clerkId === userId) || false);
 
-          const myRating = data.ratings?.find(r => r.user?.clerkId === userId);
-          if (myRating) setRating(myRating.value);
-        }
-        setLoading(false);
-      })
-      .catch((e) => {
-        console.error(e);
-        setLoading(false);
-      });
+        const myRating = data.ratings?.find(r => r.user?.clerkId === userId);
+        if (myRating) setRating(myRating.value);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEventDetails();
   }, [urlId, userId]);
 
   if (!isLoaded || (isLoaded && !userId)) {
@@ -324,6 +325,7 @@ export default function ItemDetailPage() {
       if (res.ok) {
         setShowRateModal(false);
         setShowRateSuccess(true);
+        await fetchEventDetails();
         setTimeout(() => setShowRateSuccess(false), 3000);
       }
     } catch (e) {
@@ -373,6 +375,10 @@ export default function ItemDetailPage() {
     return "";
   };
 
+  const ratingsCount = event?.ratings?.length || 0;
+  const ratingsSum = event?.ratings?.reduce((sum, r) => sum + r.value, 0) || 0;
+  const averageRating = ratingsCount > 0 ? (ratingsSum / ratingsCount).toFixed(1) : null;
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Hero Header */}
@@ -395,7 +401,7 @@ export default function ItemDetailPage() {
             sizes="100vw"
             className="object-cover bg-muted"
             priority
-            unoptimized={event.coverImage?.includes("dropbox.com") || event.coverImage?.includes("unsplash.com") || event.coverImage?.includes("images.unsplash.com")}
+            unoptimized={event.coverImage?.includes("dropbox") || event.coverImage?.includes("unsplash")}
           />
         )}
 
@@ -510,6 +516,42 @@ export default function ItemDetailPage() {
               <p className="text-sm text-muted-foreground">{event.locationText}</p>
             </div>
           </div>
+
+          {isFinished && (
+            <div className="flex items-start gap-4 pt-2 border-t border-border/50">
+              <Star className="w-6 h-6 text-yellow-500 mt-0.5 flex-shrink-0 fill-yellow-500" />
+              <div>
+                <p className="font-semibold mb-1">Valoración media</p>
+                <div className="text-sm text-muted-foreground">
+                  {averageRating ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg font-bold text-foreground">{averageRating}</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const ratingVal = parseFloat(averageRating);
+                          const isFilled = star <= Math.round(ratingVal);
+                          return (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${isFilled
+                                  ? "text-yellow-500 fill-yellow-500"
+                                  : "text-muted-foreground/30 fill-transparent"
+                                }`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        ({ratingsCount} {ratingsCount === 1 ? "valoración" : "valoraciones"})
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="italic">Este evento aún no tiene valoraciones</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="h-40 md:h-48 bg-muted rounded-xl overflow-hidden relative group">
             {event.lat && event.lng ? (
@@ -712,7 +754,7 @@ export default function ItemDetailPage() {
                               width={600}
                               height={600}
                               className="w-full h-auto block hover:opacity-90 transition-opacity"
-                              unoptimized={url.includes("dropbox.com") || url.includes("unsplash.com") || url.includes("images.unsplash.com")}
+                              unoptimized={url.includes("dropbox") || url.includes("unsplash")}
                             />
                           )}
                           {item.type === "video" && (
@@ -1178,13 +1220,13 @@ export default function ItemDetailPage() {
               ) : (
                 <Image
                   src={event.userGallery[selectedMediaIndex].url}
-                  alt={`Foto subida por ${user?.name || "usuario"}`}
+                  alt={`Foto subida por ${event.userGallery[selectedMediaIndex].user?.name || "usuario"}`}
                   width={1200}
                   height={1200}
                   style={{ width: 'auto', height: 'auto' }}
                   className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl border border-border bg-black/5"
                   priority
-                  unoptimized={event.userGallery[selectedMediaIndex].url.includes("dropbox.com") || event.userGallery[selectedMediaIndex].url.includes("unsplash.com") || event.userGallery[selectedMediaIndex].url.includes("images.unsplash.com")}
+                  unoptimized={event.userGallery[selectedMediaIndex].url.includes("dropbox") || event.userGallery[selectedMediaIndex].url.includes("unsplash")}
                 />
               )}
             </div>
@@ -1195,7 +1237,7 @@ export default function ItemDetailPage() {
                 {event.userGallery[selectedMediaIndex].user?.imageUrl ? (
                   <img
                     src={event.userGallery[selectedMediaIndex].user.imageUrl}
-                    alt={`Avatar de ${user?.name || "usuario"}`}
+                    alt={`Avatar de ${event.userGallery[selectedMediaIndex].user?.name || "usuario"}`}
                     className="w-8 h-8 rounded-full object-cover border border-border"
                   />
                 ) : (

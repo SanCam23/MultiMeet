@@ -139,7 +139,7 @@ export default function UserProfilePage() {
         {/* Profile Info Section (Matches Dashboard) */}
         <section className="mb-8" aria-label="Perfil de usuario">
           <div className="max-w-2xl mx-auto lg:mx-0">
-            <div className="flex items-start gap-5 mb-6">
+            <div className="flex items-center gap-5 mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-secondary/20 overflow-hidden bg-primary/10 flex-shrink-0 flex items-center justify-center">
                 {user.avatar ? (
                   <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
@@ -149,12 +149,17 @@ export default function UserProfilePage() {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold mb-1">{user.name}</h2>
-                <p className="text-muted-foreground text-sm mb-3">{user.username}</p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className={`w-4 h-4 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
-                  <span>{user.location || "Ubicación desconocida"}</span>
+                <p className="text-muted-foreground text-sm mb-0 md:mb-3">{user.username}</p>
+                <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className={`w-4 h-4 shrink-0 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
+                  <span className="truncate">{user.location || "Ubicación desconocida"}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="md:hidden flex items-center gap-2 text-sm text-muted-foreground mb-3">
+              <MapPin className={`w-4 h-4 shrink-0 ${isHighContrast ? "text-yellow-300" : "text-secondary"}`} aria-hidden="true" />
+              <span className="truncate">{user.location || "Ubicación desconocida"}</span>
             </div>
 
             <p className="text-sm mb-6 leading-relaxed">

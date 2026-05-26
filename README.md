@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# MultiMeet
 
-## Getting Started
+MultiMeet es una aplicación web moderna y adaptable (responsive) diseñada con un objetivo claro: **conectar a las personas a través de experiencias y eventos compartidos**. 
 
-First, run the development server:
+En un mundo cada vez más digital, MultiMeet busca romper la barrera de la pantalla facilitando la interacción en el mundo real. Nuestro objetivo principal es proporcionar una plataforma integral, accesible e intuitiva donde cualquier persona pueda descubrir, crear y organizar eventos locales. Ya sea un encuentro deportivo, una exposición de arte, un grupo de estudio o una reunión social, MultiMeet centraliza todas estas actividades en un mapa interactivo, fomentando la creación de comunidades locales más fuertes, activas y conectadas.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Características Principales
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Descubrimiento de Eventos y Mapa Interactivo:** Explora eventos de forma fluida a través de un mapa interactivo o una vista de lista categorizada, permitiendo localizar actividades cerca de ti al instante.
+- **Autenticación de Usuarios:** Gestión de usuarios y autenticación segura respaldada por [Clerk](https://clerk.com/).
+- **Perfiles Personalizados:** Los usuarios pueden crear perfiles detallados, ajustar su ubicación y añadir una biografía para conectar mejor con otros asistentes.
+- **Búsqueda por Categorías:** Filtra y encuentra fácilmente eventos basados en intereses o categorías específicas.
+- **Diseño Adaptativo (Responsive):** Una interfaz completamente optimizada tanto para dispositivos móviles como de escritorio, con una estética de diseño moderna y soporte nativo para modo oscuro.
+- **Onboarding Fluido:** Un proceso de registro e introducción diseñado para que los usuarios configuren su cuenta rápida y eficientemente.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 🛠️ Stack Tecnológico
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework:** [Next.js](https://nextjs.org/) (React)
+- **Base de Datos:** MongoDB (mediante [Mongoose](https://mongoosejs.com/))
+- **Autenticación:** [Clerk](https://clerk.com/)
+- **Almacenamiento de Archivos:** Integración con la API de Dropbox
+- **Estilos:** CSS / Componentes UI Modernos
+- **Despliegue:** [Vercel](https://vercel.com/)
 
-## Learn More
+## ⚙️ Guía de Inicio
 
-To learn more about Next.js, take a look at the following resources:
+Para obtener una copia local y ejecutarla en tu máquina, sigue estos sencillos pasos:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Prerrequisitos
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Node.js (se recomienda la versión v18.0.0 o superior)
+- Gestor de paquetes: npm, yarn, pnpm, o bun
 
-## Deploy on Vercel
+### Instalación
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/tu-usuario/multimeet.git
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. Navega al directorio del proyecto:
+   ```bash
+   cd MultiMeet
+   ```
+
+3. Instala las dependencias necesarias:
+   ```bash
+   npm install
+   # o
+   yarn install
+   # o
+   pnpm install
+   ```
+
+4. Configura tus variables de entorno:
+   Crea un archivo `.env.local` en la raíz del proyecto y añade las credenciales requeridas para MongoDB, Clerk y Dropbox.
+   ```env
+   multimeet_MONGODB_URI=tu_mongodb_uri
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=tu_clerk_publishable_key
+   CLERK_SECRET_KEY=tu_clerk_secret_key
+   CLERK_WEBHOOK_SECRET=tu_clerk_webhook_secret
+   DROPBOX_APP_KEY=tu_dropbox_app_key
+   DROPBOX_APP_SECRET=tu_dropbox_app_secret
+   DROPBOX_REFRESH_TOKEN=tu_dropbox_refresh_token
+   ```
+
+5. Inicia el servidor de desarrollo:
+   ```bash
+   npm run dev
+   # o
+   yarn dev
+   ```
+
+6. Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicación en funcionamiento.
+
+## 👨‍💻 Equipo de Desarrollo
+
+Este proyecto ha sido desarrollado y es mantenido por:
+
+- **Santino Campessi Lojo**
+- **Mario Laguna Contreras**
+- **Arnau Donat García**
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT.
