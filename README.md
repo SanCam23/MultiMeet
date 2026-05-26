@@ -22,6 +22,15 @@ En un mundo cada vez más digital, MultiMeet busca romper la barrera de la panta
 - **Estilos:** CSS / Componentes UI Modernos
 - **Despliegue:** [Vercel](https://vercel.com/)
 
+## 🔌 APIs e Integraciones Utilizadas
+
+Para ofrecer todas sus funcionalidades, MultiMeet se integra de manera robusta con diversas APIs de terceros:
+
+- **Clerk API:** Gestión completa de identidades, registro seguro, inicio de sesión y administración de perfiles de usuario. Se complementa con **Svix** para gestionar y recibir webhooks en tiempo real (útil para la sincronización de la base de datos).
+- **Dropbox API:** Utilizada como solución de almacenamiento en la nube para guardar y gestionar de forma segura los recursos y archivos (como imágenes de perfil o fotos de los eventos).
+- **Groq API:** Integración de Inteligencia Artificial para potenciar las capacidades de la aplicación mediante procesamiento de lenguaje natural de altísima velocidad.
+- **Leaflet / OpenStreetMap:** API de mapas de código abierto empleada (junto a `react-leaflet`) para renderizar los mapas interactivos, facilitando a los usuarios localizar la ubicación exacta de los distintos eventos de forma visual.
+
 ## ⚙️ Guía de Inicio
 
 Para obtener una copia local y ejecutarla en tu máquina, sigue estos sencillos pasos:
@@ -62,6 +71,7 @@ Para obtener una copia local y ejecutarla en tu máquina, sigue estos sencillos 
    DROPBOX_APP_KEY=tu_dropbox_app_key
    DROPBOX_APP_SECRET=tu_dropbox_app_secret
    DROPBOX_REFRESH_TOKEN=tu_dropbox_refresh_token
+   GROQ_API_KEY=tu_groq_api_key
    ```
 
 5. Inicia el servidor de desarrollo:
