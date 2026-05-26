@@ -36,14 +36,15 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0F0B1B;
   --foreground: #F8F9FA;
   --card: #1A1625;
   --card-foreground: #F8F9FA;
   --popover: #1A1625;
   --popover-foreground: #F8F9FA;
-  --primary: #7209B7;
-  --primary-foreground: #ffffff;
+  --primary: #A78BFA;
+  --primary-foreground: #0F0B1B;
   --secondary: #7CCFEB;
   --secondary-foreground: #0F0B1B;
   --muted: #2A2535;
@@ -56,11 +57,12 @@
   --input: #2A2535;
   --input-background: #1A1625;
   --switch-background: #2A2535;
-  --ring: #7209B7;
+  --ring: #A78BFA;
   --logo-title: #A78BFA;
 }
 
 .high-contrast {
+  color-scheme: dark;
   --background: #111111;
   --foreground: #FFFF00;
   --card: #1E1E1E;
@@ -172,4 +174,26 @@
 .high-contrast *:focus-visible {
   outline: 4px solid #FFFF00 !important;
   outline-offset: 2px !important;
+}
+
+/* Soporte de accesibilidad para controles nativos de fecha y hora en modo oscuro/alto contraste */
+.dark input[type="date"],
+.dark input[type="time"],
+.high-contrast input[type="date"],
+.high-contrast input[type="time"] {
+  color-scheme: dark;
+}
+
+.dark input::-webkit-calendar-picker-indicator,
+.high-contrast input::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.8) !important;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  transition: background-color 0.2s;
+}
+
+.dark input::-webkit-calendar-picker-indicator:hover,
+.high-contrast input::-webkit-calendar-picker-indicator:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
 }

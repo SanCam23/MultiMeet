@@ -63,7 +63,7 @@ INSTRUCCIONES:
 - Sigue las indicaciones sobre la ubicación (si es el mismo lugar o uno nuevo) para que quede bien destacado en la descripción.
 - Asegúrate de que la información sea clara y coherente con los datos del evento proporcionados.
 - Mantén la esencia del mensaje original pero elévalo a un nivel profesional.
-- Devuelve ÚNICAMENTE el texto final de la descripción mejorada, sin introducciones, saludos ni comentarios.
+- Devuelve ÚNICAMENTE el texto final de la descripción mejorada, sin introducciones, saludos, comillas ni comentarios.
 - La descripción debe tener entre 3 y 5 frases.`;
       } else {
         prompt = `Actúa como un experto organizador de eventos y community manager. Genera una descripción atractiva, clara y que anime a participar en una nueva edición o ampliación de un meetup existente:
@@ -104,7 +104,7 @@ INSTRUCCIONES:
 - Mejora la redacción, hazla más atractiva y motivadora.
 - Asegúrate de que la información sea clara y coherente con los datos del evento proporcionados.
 - Mantén la esencia del mensaje original pero elévalo a un nivel profesional.
-- Devuelve ÚNICAMENTE el texto final de la descripción mejorada, sin introducciones, saludos ni comentarios.
+- Devuelve ÚNICAMENTE el texto final de la descripción mejorada, sin introducciones, saludos, comillas ni comentarios.
 - La descripción debe tener entre 3 y 5 frases.`;
       } else {
         // Prompt para GENERAR desde cero
@@ -146,11 +146,14 @@ Devuelve ÚNICAMENTE el texto final de la descripción, sin introducciones, salu
     }
 
     const data = await response.json();
-    const generatedText = data?.choices?.[0]?.message?.content?.trim();
+    let generatedText = data?.choices?.[0]?.message?.content?.trim();
 
     if (!generatedText) {
       throw new Error("La API no devolvió ningún contenido.");
     }
+
+    // Limpiar comillas iniciales y finales que a veces añade el modelo
+    generatedText = generatedText.replace(/^["'«»“”]+|["'«»“”]+$/g, "").trim();
 
     return NextResponse.json({ description: generatedText });
 
