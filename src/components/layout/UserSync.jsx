@@ -19,8 +19,10 @@ export function UserSync({ children }) {
     if (!isLoaded) return;
 
     if (!userId) {
-      setIsChecking(false);
-      return;
+      const timer = setTimeout(() => {
+        setIsChecking(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     if (userId && !hasSynced.current) {

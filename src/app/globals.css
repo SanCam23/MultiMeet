@@ -168,3 +168,8 @@
     scroll-behavior: auto !important;
   }
 }
+
+.high-contrast *:focus-visible {
+  outline: 4px solid #FFFF00 !important;
+  outline-offset: 2px !important;
+}

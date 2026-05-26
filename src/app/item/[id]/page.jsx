@@ -1016,7 +1016,7 @@ export default function ItemDetailPage() {
               </div>
               <h3 id="join-title" className="text-xl font-bold text-foreground">¿Apuntarse al evento?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
-                ¿Estás seguro de que deseas apuntarte a "{event.title}"? Confirma para unirte.
+                ¿Estás seguro de que deseas apuntarte a &quot;{event.title}&quot;? Confirma para unirte.
               </p>
             </div>
             <div className="flex gap-3 mt-8">
@@ -1055,7 +1055,7 @@ export default function ItemDetailPage() {
               </div>
               <h3 id="leave-title" className="text-xl font-bold text-foreground">¿Desapuntarse del evento?</h3>
               <p className="text-muted-foreground mt-2 text-sm">
-                ¿Estás seguro de que deseas desapuntarte de "{event.title}"? Podrás volver a apuntarte si aún hay plazas.
+                ¿Estás seguro de que deseas desapuntarte de &quot;{event.title}&quot;? Podrás volver a apuntarte si aún hay plazas.
               </p>
             </div>
             <div className="flex gap-3 mt-8">
