@@ -19,7 +19,6 @@ En un mundo cada vez más digital, MultiMeet busca romper la barrera de la panta
 - **Base de Datos:** MongoDB (mediante [Mongoose](https://mongoosejs.com/))
 - **Autenticación:** [Clerk](https://clerk.com/)
 - **Almacenamiento de Archivos:** Integración con la API de Dropbox
-- **Estilos:** CSS / Componentes UI Modernos
 - **Despliegue:** [Vercel](https://vercel.com/)
 
 ## 🔌 APIs e Integraciones Utilizadas
