@@ -151,6 +151,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -163,7 +164,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -176,24 +180,31 @@
   outline-offset: 2px !important;
 }
 
-/* Soporte de accesibilidad para controles nativos de fecha y hora en modo oscuro/alto contraste */
-.dark input[type="date"],
-.dark input[type="time"],
-.high-contrast input[type="date"],
-.high-contrast input[type="time"] {
-  color-scheme: dark;
+/* Soporte de accesibilidad para controles nativos de fecha y hora */
+input[type="date"],
+input[type="time"] {
+  position: relative;
 }
 
-.dark input::-webkit-calendar-picker-indicator,
-.high-contrast input::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(1.8) !important;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 2px;
-  transition: background-color 0.2s;
+/* Ocultar el icono nativo de calendario/reloj de los navegadores (Chrome, Edge, Safari)
+   pero manteniéndolo completamente funcional al hacerlo invisible y posicionarlo a la derecha. */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute !important;
+  right: 0 !important;
+  top: 0 !important;
+  width: 40px !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 10 !important;
 }
 
-.dark input::-webkit-calendar-picker-indicator:hover,
-.high-contrast input::-webkit-calendar-picker-indicator:hover {
-  background-color: rgba(255, 255, 255, 0.15) !important;
+/* Para Firefox: ocultar el selector nativo duplicado */
+input[type="date"]::-moz-calendar-picker-indicator,
+input[type="time"]::-moz-calendar-picker-indicator {
+  opacity: 0 !important;
+  cursor: pointer !important;
 }
